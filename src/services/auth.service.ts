@@ -4,7 +4,10 @@ import type { IUser } from '../models/Users.js';
 export class AuthService {
     static generateToken(user: IUser): string {
         return jwt.sign(
-            { id: user._id, role: user.role },
+            {
+                id: String(user._id),
+                role: user.role || 'seeker'
+            },
             process.env.JWT_SECRET!,
             { expiresIn: '1d' }
         );

@@ -3,6 +3,7 @@ import { Schema, model, Document } from 'mongoose';
 export interface IOtp extends Document {
     email: string;
     otpHash: string;
+    count: number;
     createdAt: Date;
 }
 

@@ -37,6 +37,44 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction): 
   }
 };
 
+export const resendOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    const otpRecord = await Otp.findOne({ email });
+
+    if (!otpRecord) {
+      res.status(400).json({ success: false, message: 'No OTP request found for this email.' });
+      return;
+    }
+
+    if (otpRecord.count >= 4) {
+      res.status(429).json({
+        success: false,
+        message: 'Too many attempts. Please wait an hour before trying again.'
+      });
+      return;
+    }
+
+    const { otp, otpHash } = await generateOtpData(email);
+
+    otpRecord.otpHash = otpHash;
+    otpRecord.count += 1;
+    otpRecord.createdAt = new Date();
+    await otpRecord.save();
+
+    await sendOtpEmail(email, otp);
+
+    res.status(200).json({
+      success: true,
+      message: `OTP resent. Attempt ${otpRecord.count} of 3.`,
+      otp: otp
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const verifyOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, otp } = req.body;
@@ -113,3 +151,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     next(error);
   }
 };
+
+function generateOtpData(email: any): { otp: any; otpHash: any; } | PromiseLike<{ otp: any; otpHash: any; }> {
+  throw new Error('Function not implemented.');
+}

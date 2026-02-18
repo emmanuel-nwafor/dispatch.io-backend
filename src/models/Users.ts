@@ -8,6 +8,7 @@ export interface IUser extends Document {
     isProfileCompleted: boolean;
     otpHash?: string | undefined;
     otpExpires?: Date | undefined;
+
     // Expanded Seeker Profile
     profile?: {
         fullName: string;

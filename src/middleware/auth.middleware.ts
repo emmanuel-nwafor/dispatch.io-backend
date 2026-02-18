@@ -1,37 +1,36 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+interface TokenPayload {
+    id: string;
+    role: string;
+}
+
 export interface AuthRequest extends Request {
-    user?: {
-        id: string;
-        role: string;
-    };
+    user?: TokenPayload;
 }
 
 export const protect = (req: AuthRequest, res: Response, next: NextFunction): void => {
     let token: string | undefined;
+
     if (req.headers.authorization?.startsWith('Bearer')) {
-        try {
-            token = req.headers.authorization.split(' ')[1];
-
-            if (!token) {
-                res.status(401).json({ message: 'Not authorized, no token' });
-                return;
-            }
-
-            const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string, role: string };
-            req.user = decoded;
-
-            return next();
-        } catch (error) {
-            res.status(401).json({ message: 'Not authorized, token failed' });
-            return;
-        }
+        token = req.headers.authorization.split(' ')[1];
+    }
+    else if (req.headers['x-api-key']) {
+        token = req.headers['x-api-key'] as string;
     }
 
-    if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
+    if (!token || token === '{{token}}') {
+        res.status(401).json({ success: false, message: "Not authorized, token missing or invalid variable" });
         return;
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as unknown as { id: string, role: string };
+        req.user = decoded;
+        next();
+    } catch (error) {
+        res.status(401).json({ success: false, message: "Token failed" });
     }
 };
 
@@ -39,7 +38,8 @@ export const authorize = (...roles: string[]) => {
     return (req: AuthRequest, res: Response, next: NextFunction): void => {
         if (!req.user || !roles.includes(req.user.role)) {
             res.status(403).json({
-                message: `Role ${req.user?.role || 'Unknown'} is not authorized to access this route`
+                success: false,
+                message: `Role ${req.user?.role || 'Unknown'} is not authorized`
             });
             return;
         }
