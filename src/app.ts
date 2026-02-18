@@ -10,6 +10,7 @@ import helmet from 'helmet';
 import * as dotenv from 'dotenv';
 import authRoutes from './routes/auth/auth.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
+import { completeProfile } from './controllers/user.controller.js';
 
 dotenv.config();
 
@@ -24,6 +25,8 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 app.use('/api/auth', authRoutes);
+
+app.use('/api/v1/users', completeProfile);
 
 app.use(errorHandler)
 

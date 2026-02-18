@@ -8,16 +8,27 @@ export interface IUser extends Document {
     isProfileCompleted: boolean;
     otpHash?: string | undefined;
     otpExpires?: Date | undefined;
+    // Expanded Seeker Profile
     profile?: {
         fullName: string;
+        phone: string;
+        bio: string;
+        location: string;
         resumeUrl: string;
         skills: string[];
         experienceYear: number;
+        education: string;
+        preferredJobTypes: string[];
     } | undefined;
+    // Expanded Recruiter Profile
     recruiterProfile?: {
         companyName: string;
         companyWebsite: string;
+        industry: string;
+        companySize: string;
+        location: string;
         accountabilityScore: number;
+        verifiedCompany: boolean;
     } | undefined;
 }
 
@@ -33,14 +44,23 @@ const userSchema = new Schema<IUser>({
 
     profile: {
         fullName: { type: String, default: '' },
+        phone: { type: String, default: '' },
+        bio: { type: String, default: '' },
+        location: { type: String, default: '' },
         resumeUrl: { type: String, default: '' },
         skills: { type: [String], default: [] },
-        experienceYear: { type: Number, default: 0 }
+        experienceYear: { type: Number, default: 0 },
+        education: { type: String, default: '' },
+        preferredJobTypes: { type: [String], default: [] }
     },
     recruiterProfile: {
         companyName: { type: String, default: '' },
         companyWebsite: { type: String, default: '' },
-        accountabilityScore: { type: Number, default: 100 }
+        industry: { type: String, default: '' },
+        companySize: { type: String, default: '' },
+        location: { type: String, default: '' },
+        accountabilityScore: { type: Number, default: 100 },
+        verifiedCompany: { type: Boolean, default: false }
     }
 }, {
     timestamps: true,
@@ -53,7 +73,7 @@ const userSchema = new Schema<IUser>({
     }
 });
 
-// Automaticatically deletes isVerified
+// Automatically deletes unverified accounts after 1 hour (3600s)
 userSchema.index({ createdAt: 1 }, {
     expireAfterSeconds: 3600,
     partialFilterExpression: { isVerified: false }
