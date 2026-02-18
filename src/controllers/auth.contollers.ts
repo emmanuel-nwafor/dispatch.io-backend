@@ -5,6 +5,14 @@ import { User } from '../models/Users.js';
 import { Otp } from '../models/Otp.js';
 import { sendOtpEmail } from '../services/email.service.js';
 
+// Helper to generate and hash OTP
+const generateOtpData = async (email: string) => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const salt = await bcrypt.genSalt(10);
+  const otpHash = await bcrypt.hash(otp, salt);
+  return { otp, otpHash };
+};
+
 export const sendOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email } = req.body;
@@ -15,13 +23,11 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction): 
       return;
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const salt = await bcrypt.genSalt(10);
-    const otpHash = await bcrypt.hash(otp, salt);
+    const { otp, otpHash } = await generateOtpData(email);
 
     await Otp.findOneAndUpdate(
       { email },
-      { otpHash, createdAt: new Date() },
+      { otpHash, count: 1, createdAt: new Date() },
       { upsert: true, new: true }
     );
 
@@ -30,7 +36,7 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction): 
     res.status(200).json({
       success: true,
       message: 'OTP sent to email.',
-      otp: otp
+      otp: otp // Only for development; remove in production
     });
   } catch (error) {
     next(error);
@@ -48,7 +54,8 @@ export const resendOtp = async (req: Request, res: Response, next: NextFunction)
       return;
     }
 
-    if (otpRecord.count >= 4) {
+    // Check abuse limit (e.g., max 3 attempts)
+    if (otpRecord.count >= 3) {
       res.status(429).json({
         success: false,
         message: 'Too many attempts. Please wait an hour before trying again.'
@@ -58,6 +65,7 @@ export const resendOtp = async (req: Request, res: Response, next: NextFunction)
 
     const { otp, otpHash } = await generateOtpData(email);
 
+    // Update hash, increment count, and refresh timestamp
     otpRecord.otpHash = otpHash;
     otpRecord.count += 1;
     otpRecord.createdAt = new Date();
@@ -116,6 +124,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       isVerified: true
     });
 
+    // Success! Clear the OTP record entirely
     await Otp.deleteOne({ email: otpRecord.email });
 
     const token = AuthService.generateToken(newUser);
@@ -151,7 +160,3 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     next(error);
   }
 };
-
-function generateOtpData(email: any): { otp: any; otpHash: any; } | PromiseLike<{ otp: any; otpHash: any; }> {
-  throw new Error('Function not implemented.');
-}
