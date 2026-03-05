@@ -27,7 +27,9 @@ export const completeProfile = async (req: AuthRequest, res: Response, next: Nex
             companyWebsite,
             industry,
             companySize,
-            companyLocation
+            companyLocation,
+            autoApplyEnabled,
+            autoApplyMinMatchScore
         } = req.body;
 
         const user = await User.findById(userId);
@@ -50,7 +52,11 @@ export const completeProfile = async (req: AuthRequest, res: Response, next: Nex
                 skills: skills || [],
                 experienceYear: Number(experienceYear) || 0,
                 education: education || '',
-                preferredJobTypes: preferredJobTypes || []
+                preferredJobTypes: preferredJobTypes || [],
+                autoApply: {
+                    enabled: autoApplyEnabled ?? user.profile?.autoApply?.enabled ?? false,
+                    minMatchScore: autoApplyMinMatchScore ?? user.profile?.autoApply?.minMatchScore ?? 85
+                }
             };
             user.recruiterProfile = undefined;
             user.markModified('profile');

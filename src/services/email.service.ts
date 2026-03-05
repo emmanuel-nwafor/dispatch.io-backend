@@ -94,15 +94,58 @@ export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
 
 export const sendWelcomeEmail = async (to: string, name: string): Promise<void> => {
     const transporter = getTransporter();
+
+    // High-quality Hero Image for the Welcome Email
+    const heroImageUrl = "https://res.cloudinary.com/dquiwougr/image/upload/v1741178220/welcome-hero_career.png";
+
     const action = `
         <tr>
-            <td style="padding: 10px 40px 30px 40px;">
-                <a href="https://dispatch.io/profile" style="display: inline-block; padding: 14px 28px; background-color: #16a34a; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600;">Complete Your Profile</a>
-            </td>
-        </tr>`;
+            <td style="padding: 0 40px 30px 40px;">
+                <div style="background-color: #f8fafc; border-radius: 20px; padding: 30px; border: 1px solid #f1f5f9;">
+                    <h3 class="text-main" style="color: #111111; font-size: 18px; font-weight: 700; margin-top: 0;">What's next?</h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <span style="color: #16a34a; font-weight: 800;">01.</span>
+                        <span class="text-main" style="color: #111111; font-weight: 600;"> Complete your Bio</span>
+                        <p class="text-sub" style="color: #64748b; font-size: 14px; margin: 5px 0 0 25px;">Our AI uses your experience to rank you higher for top roles.</p>
+                    </div>
 
-    const html = emailLayout(`Welcome, ${name}! 🚀`, "Your account is verified. You're now ready to discover roles curated specifically for your skills.", action);
-    await transporter.sendMail({ from: `"dispatch.io" <${process.env.EMAIL_USER}>`, to, subject: "Welcome to dispatch.io", html });
+                    <div style="margin-bottom: 20px;">
+                        <span style="color: #16a34a; font-weight: 800;">02.</span>
+                        <span class="text-main" style="color: #111111; font-weight: 600;"> Set Job Preferences</span>
+                        <p class="text-sub" style="color: #64748b; font-size: 14px; margin: 5px 0 0 25px;">Tell us if you want Remote, Hybrid, or On-site opportunities.</p>
+                    </div>
+
+                    <div>
+                        <a href="https://dispatch.io/profile" style="display: inline-block; padding: 16px 32px; background-color: #16a34a; color: #ffffff; text-decoration: none; border-radius: 14px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);">
+                            Enter Dispatch.io
+                        </a>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    `;
+
+    const welcomeBody = `
+        <div style="margin-bottom: 25px;">
+            <img src="${heroImageUrl}" alt="Welcome" width="100%" style="border-radius: 16px; margin-bottom: 20px; object-fit: cover;">
+            <p class="text-sub" style="color: #4b5563; font-size: 17px; line-height: 1.7;">
+                Hi ${name}, welcome to the inner circle. <strong>Dispatch.io</strong> isn't just a job board—it's your personal career agent.
+            </p>
+            <p class="text-sub" style="color: #4b5563; font-size: 17px; line-height: 1.7;">
+                We’ve officially verified your account. Now, let’s get you in front of the world's most innovative companies.
+            </p>
+        </div>
+    `;
+
+    const html = emailLayout(`The future of your career starts here.`, welcomeBody, action);
+
+    await transporter.sendMail({
+        from: `"dispatch.io" <${process.env.EMAIL_USER}>`,
+        to,
+        subject: "Your journey with dispatch.io begins now 🚀",
+        html
+    });
 };
 
 export const sendApplicationStatusEmail = async (to: string, jobTitle: string, status: string): Promise<void> => {

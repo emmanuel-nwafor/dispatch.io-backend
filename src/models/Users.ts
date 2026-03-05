@@ -20,6 +20,10 @@ export interface IUser extends Document {
         experienceYear: number;
         education: string;
         preferredJobTypes: string[];
+        autoApply?: {
+            enabled: boolean;
+            minMatchScore: number;
+        };
     } | undefined;
     // Expanded Recruiter Profile
     recruiterProfile?: {
@@ -52,7 +56,11 @@ const userSchema = new Schema<IUser>({
         skills: { type: [String], default: [] },
         experienceYear: { type: Number, default: 0 },
         education: { type: String, default: '' },
-        preferredJobTypes: { type: [String], default: [] }
+        preferredJobTypes: { type: [String], default: [] },
+        autoApply: {
+            enabled: { type: Boolean, default: false },
+            minMatchScore: { type: Number, default: 85 }
+        }
     },
     recruiterProfile: {
         companyName: { type: String, default: '' },
