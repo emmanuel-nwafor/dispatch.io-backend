@@ -74,7 +74,6 @@ const userSchema = new Schema<IUser>({
     }
 });
 
-// Automatically deletes unverified accounts after 1 hour (3600s)
 userSchema.index({ createdAt: 1 }, {
     expireAfterSeconds: 3600,
     partialFilterExpression: { isVerified: false }

@@ -36,7 +36,7 @@ export const sendOtp = async (req: Request, res: Response, next: NextFunction): 
     res.status(200).json({
       success: true,
       message: 'OTP sent to email.',
-      otp: otp // Only for development; remove in production
+      otp: otp
     });
   } catch (error) {
     next(error);
@@ -65,7 +65,6 @@ export const resendOtp = async (req: Request, res: Response, next: NextFunction)
 
     const { otp, otpHash } = await generateOtpData(email);
 
-    // Update hash, increment count, and refresh timestamp
     otpRecord.otpHash = otpHash;
     otpRecord.count += 1;
     otpRecord.createdAt = new Date();
@@ -124,7 +123,6 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       isVerified: true
     });
 
-    // Success! Clear the OTP record entirely
     await Otp.deleteOne({ email: otpRecord.email });
 
     const token = AuthService.generateToken(newUser);
