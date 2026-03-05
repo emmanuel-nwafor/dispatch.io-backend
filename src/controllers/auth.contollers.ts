@@ -54,10 +54,10 @@ export const resendOtp = async (req: Request, res: Response, next: NextFunction)
       return;
     }
 
-    if (otpRecord.count >= 3) {
+    if (otpRecord.count >= 5) {
       res.status(429).json({
         success: false,
-        message: 'Too many attempts. Please wait an hour before trying again.'
+        message: 'Too many attempts. Please wait 10 minutes before trying again.'
       });
       return;
     }
@@ -73,7 +73,7 @@ export const resendOtp = async (req: Request, res: Response, next: NextFunction)
 
     res.status(200).json({
       success: true,
-      message: `OTP resent. Attempt ${otpRecord.count} of 3.`,
+      message: `OTP resent. Attempt ${otpRecord.count} of 5.`,
       otp: otp
     });
   } catch (error) {

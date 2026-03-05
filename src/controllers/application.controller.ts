@@ -171,3 +171,24 @@ export const updateApplicationStatus = async (req: AuthRequest, res: Response, n
         next(error);
     }
 };
+
+export const getPostedJobs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const recruiterId = req.user?.id;
+
+        if (!recruiterId) {
+            res.status(401).json({ success: false, message: 'Unauthorized.' });
+            return;
+        }
+
+        const jobs = await Job.find({ recruiter: recruiterId }).sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: jobs.length,
+            jobs
+        });
+    } catch (error) {
+        next(error);
+    }
+};

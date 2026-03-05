@@ -10,6 +10,7 @@ export interface IOtp extends Document {
 const otpSchema = new Schema<IOtp>({
     email: { type: String, required: true, lowercase: true, trim: true },
     otpHash: { type: String, required: true },
+    count: { type: Number, default: 1 },
     createdAt: { type: Date, default: Date.now, expires: 600 }
 });
 
