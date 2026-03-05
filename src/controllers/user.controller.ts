@@ -2,6 +2,7 @@ import type { Response, NextFunction } from 'express';
 import { User } from '../models/Users.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 import { AuthService } from '../services/auth.service.js';
+import { sendWelcomeEmail } from '../services/email.service.js';
 
 export const completeProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -68,6 +69,10 @@ export const completeProfile = async (req: AuthRequest, res: Response, next: Nex
         }
 
         await user.save();
+
+        if (fullName) {
+            await sendWelcomeEmail(user.email, fullName);
+        }
 
         res.status(200).json({
             success: true,

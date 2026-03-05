@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { AuthService } from '../services/auth.service.js';
 import { User } from '../models/Users.js';
 import { Otp } from '../models/Otp.js';
-import { sendOtpEmail } from '../services/email.service.js';
+import { sendOtpEmail, sendWelcomeEmail } from '../services/email.service.js';
 
 // Helper to generate and hash OTP
 const generateOtpData = async (email: string) => {
@@ -54,7 +54,6 @@ export const resendOtp = async (req: Request, res: Response, next: NextFunction)
       return;
     }
 
-    // Check abuse limit (e.g., max 3 attempts)
     if (otpRecord.count >= 3) {
       res.status(429).json({
         success: false,
@@ -126,6 +125,9 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     await Otp.deleteOne({ email: otpRecord.email });
 
     const token = AuthService.generateToken(newUser);
+
+    // Send welcome email (using "New Member" since fullName isn't set yet)
+    await sendWelcomeEmail(newUser.email, "New Member");
 
     res.status(201).json({
       success: true,
