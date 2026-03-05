@@ -4,6 +4,7 @@ import {
     applyToJob,
     getJobApplications,
     getMyApplications,
+    getPostedJobs,
     updateApplicationStatus,
 
 } from '../../controllers/application.controller.js';
@@ -16,7 +17,7 @@ router.get('/my', protect, authorize('seeker'), getMyApplications);
 
 router.get('/job/:jobId', protect, authorize('recruiter'), getJobApplications);
 
-// router.get('/jobs', protect, authorize('recruiter'), getJobs);
+router.get('/jobs', protect, authorize('recruiter'), getPostedJobs)
 
 router.patch('/status/:id', protect, authorize('recruiter'), updateApplicationStatus);
 
