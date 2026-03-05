@@ -4,6 +4,7 @@ import { Application } from '../models/Applications.js';
 import { Job } from '../models/Jobs.js';
 import { sendApplicationStatusEmail, sendRecruiterAlert } from '../services/email.service.js';
 import { User } from '../models/Users.js';
+import { AiService } from '../services/ai.service.js';
 
 /**
  * @desc    Apply to a job
@@ -34,10 +35,22 @@ export const applyToJob = async (req: AuthRequest, res: Response, next: NextFunc
             return;
         }
 
+        const seeker = await User.findById(seekerId);
+        if (!seeker || !seeker.profile) {
+            res.status(400).json({ success: false, message: 'Please complete your profile before applying.' });
+            return;
+        }
+
+        // Perform AI Match Analysis
+        const { score, analysis } = await AiService.analyzeMatch(seeker.profile, job);
+
         const application = await Application.create({
             jobId,
             seekerId,
-            status: 'pending'
+            status: 'pending',
+            aiMatchScore: score,
+            aiAnalysis: analysis,
+            applicationMethod: req.body.applicationMethod || 'manual'
         });
 
         res.status(201).json({
@@ -187,6 +200,42 @@ export const getPostedJobs = async (req: AuthRequest, res: Response, next: NextF
             success: true,
             count: jobs.length,
             jobs
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * @desc    Get AI analysis and refinement suggestions before applying
+ * @route   POST /api/v1/applications/analyze
+ * @access  Private (Seeker)
+ */
+export const analyzeMatchBeforeApplying = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { jobId } = req.body;
+        const seekerId = req.user?.id;
+
+        const seeker = await User.findById(seekerId);
+        if (!seeker || !seeker.profile) {
+            res.status(400).json({ success: false, message: 'Profile not found.' });
+            return;
+        }
+
+        const job = await Job.findById(jobId);
+        if (!job) {
+            res.status(404).json({ success: false, message: 'Job not found.' });
+            return;
+        }
+
+        const { score, analysis } = await AiService.analyzeMatch(seeker.profile, job);
+        const suggestions = await AiService.getRefinementSuggestions(seeker.profile, job);
+
+        res.status(200).json({
+            success: true,
+            score,
+            analysis,
+            suggestions
         });
     } catch (error) {
         next(error);

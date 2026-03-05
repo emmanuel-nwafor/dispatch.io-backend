@@ -6,12 +6,15 @@ import {
     getMyApplications,
     getPostedJobs,
     updateApplicationStatus,
-
+    analyzeMatchBeforeApplying
 } from '../../controllers/application.controller.js';
 
 const router = Router();
 
+// Candidate routes
 router.post('/apply', protect, authorize('seeker'), applyToJob);
+
+router.post('/analyze', protect, authorize('seeker'), analyzeMatchBeforeApplying);
 
 router.get('/my', protect, authorize('seeker'), getMyApplications);
 
