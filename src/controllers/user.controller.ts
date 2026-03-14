@@ -1,4 +1,4 @@
-import type { Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { User } from '../models/Users.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 import { AuthService } from '../services/auth.service.js';
@@ -85,6 +85,22 @@ export const completeProfile = async (req: AuthRequest, res: Response, next: Nex
             message: 'Profile completed successfully!',
             user: AuthService.formatUserResponse(user)
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getUserProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id).select('-passwordHash -__v');
+
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        res.status(200).json({ success: true, user });
     } catch (error) {
         next(error);
     }
