@@ -14,6 +14,7 @@ import { errorHandler } from './middleware/error.middleware.js';
 import { completeProfile } from './controllers/user.controller.js';
 import { protect } from './middleware/auth.middleware.js';
 import authRoutes from './routes/auth/auth.routes.js';
+import feedRoutes from './routes/feed/feed.routes.js';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use('/api/v1/all-jobs', jobRoutes);
 app.use('/api/v1/create-jobs', jobRoutes);
 
 app.use('/api/v1/applications', applicationRoutes);
+app.use('/api/v1/feed', feedRoutes);
 
 app.use(errorHandler)
 
