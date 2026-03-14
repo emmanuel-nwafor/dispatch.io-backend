@@ -29,8 +29,18 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction): vo
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as unknown as { id: string, role: string };
         req.user = decoded;
         next();
-    } catch (error) {
-        console.error("JWT Verification Error:", error);
+    } catch (error: any) {
+        console.error("JWT Verification Error:", error.message);
+
+        if (error.name === 'TokenExpiredError') {
+            res.status(401).json({ success: false, message: "Token expired" });
+            return;
+        }
+        if (error.name === 'JsonWebTokenError') {
+            res.status(401).json({ success: false, message: "Invalid token" });
+            return;
+        }
+
         res.status(401).json({ success: false, message: "Token failed" });
     }
 };

@@ -97,7 +97,17 @@ export const completeProfile = async (req: AuthRequest, res: Response, next: Nex
 
 export const getUserProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { id } = req.params;
+        let { id } = req.params;
+
+        if (id === 'me') {
+            const authReq = req as AuthRequest;
+            if (!authReq.user?.id) {
+                res.status(401).json({ success: false, message: 'Not authorized to access "me" without valid token.' });
+                return;
+            }
+            id = authReq.user.id;
+        }
+
         const user = await User.findById(id).select('-passwordHash -__v');
 
         if (!user) {
