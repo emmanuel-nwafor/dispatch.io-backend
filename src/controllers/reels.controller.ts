@@ -1,10 +1,11 @@
-import type { Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { Reel } from '../models/Reels.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 
-export const createReel = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const createReel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const userId = req.user?.id;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
         if (!userId) {
             res.status(401).json({ success: false, message: 'User not authenticated' });
             return;
@@ -18,12 +19,12 @@ export const createReel = async (req: AuthRequest, res: Response, next: NextFunc
         }
 
         const reel = await Reel.create({
-            creatorId: userId as any,
+            creatorId: userId,
             title,
             description,
             type: type || 'seeker_pitch',
-            videoUrl: (req.file as any).path,
-            thumbnailUrl: (req.file as any).path, // For now using the same url as thumbnail
+            videoUrl: req.file.path,
+            thumbnailUrl: req.file.path,
             tags: tags ? (Array.isArray(tags) ? tags : JSON.parse(tags)) : []
         });
 
@@ -37,10 +38,11 @@ export const createReel = async (req: AuthRequest, res: Response, next: NextFunc
     }
 };
 
-export const deleteReel = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const deleteReel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
-        const userId = req.user?.id;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
 
         if (!userId) {
             res.status(401).json({ success: false, message: 'User not authenticated' });

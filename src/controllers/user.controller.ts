@@ -5,9 +5,10 @@ import { AuthService } from '../services/auth.service.js';
 import { sendWelcomeEmail } from '../services/email.service.js';
 import { Application } from '../models/Applications.js';
 
-export const completeProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const completeProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const userId = req.user?.id;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
 
         if (!userId) {
             res.status(401).json({ success: false, message: 'Token is valid but contains no User ID.' });
@@ -96,9 +97,10 @@ export const completeProfile = async (req: AuthRequest, res: Response, next: Nex
     }
 };
 
-export const uploadAvatar = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const uploadAvatar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const userId = req.user?.id;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
         if (!userId) {
             res.status(401).json({ success: false, message: 'Not authorized' });
             return;
@@ -115,7 +117,7 @@ export const uploadAvatar = async (req: AuthRequest, res: Response, next: NextFu
             return;
         }
 
-        const imageUrl = (req.file as any).path;
+        const imageUrl = req.file.path;
 
         if (user.role === 'seeker' && user.profile) {
             user.profile.resumeUrl = imageUrl;

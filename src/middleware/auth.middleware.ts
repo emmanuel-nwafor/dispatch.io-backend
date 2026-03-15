@@ -6,11 +6,12 @@ interface TokenPayload {
     role: string;
 }
 
-export interface AuthRequest extends Request {
+export type AuthRequest = Request & {
     user?: TokenPayload;
-}
+};
 
-export const protect = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const protect = (req: Request, res: Response, next: NextFunction): void => {
+    const authReq = req as AuthRequest;
     let token: string | undefined;
 
     if (req.headers.authorization?.startsWith('Bearer')) {
@@ -26,8 +27,8 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction): vo
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as unknown as { id: string, role: string };
-        req.user = decoded;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as unknown as TokenPayload;
+        authReq.user = decoded;
         next();
     } catch (error: any) {
         console.error("JWT Verification Error:", error.message);
@@ -46,11 +47,12 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction): vo
 };
 
 export const authorize = (...roles: string[]) => {
-    return (req: AuthRequest, res: Response, next: NextFunction): void => {
-        if (!req.user || !roles.includes(req.user.role)) {
+    return (req: Request, res: Response, next: NextFunction): void => {
+        const authReq = req as AuthRequest;
+        if (!authReq.user || !roles.includes(authReq.user.role)) {
             res.status(403).json({
                 success: false,
-                message: `Role ${req.user?.role || 'Unknown'} is not authorized`
+                message: `Role ${authReq.user?.role || 'Unknown'} is not authorized`
             });
             return;
         }

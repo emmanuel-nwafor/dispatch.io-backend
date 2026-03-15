@@ -1,4 +1,4 @@
-import type { Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 import { Application } from '../models/Applications.js';
 import { Job } from '../models/Jobs.js';
@@ -11,10 +11,11 @@ import { AiService } from '../services/ai.service.js';
  * @route   POST /api/v1/applications
  * @access  Private (Seeker)
  */
-export const applyToJob = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const applyToJob = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        const authReq = req as AuthRequest;
         const { jobId } = req.body;
-        const user = req.user;
+        const user = authReq.user;
 
         if (!user || user.role !== 'seeker') {
             res.status(403).json({ success: false, message: 'Only job seekers can apply for jobs.' });
@@ -74,10 +75,11 @@ export const applyToJob = async (req: AuthRequest, res: Response, next: NextFunc
  * @route   GET /api/v1/applications/job/:jobId
  * @access  Private (Recruiter)
  */
-export const getJobApplications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getJobApplications = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        const authReq = req as AuthRequest;
         const { jobId } = req.params;
-        const recruiterId = req.user?.id;
+        const recruiterId = authReq.user?.id;
 
         if (!recruiterId) {
             res.status(401).json({ success: false, message: 'Unauthorized.' });
@@ -114,9 +116,10 @@ export const getJobApplications = async (req: AuthRequest, res: Response, next: 
  * @route   GET /api/v1/applications/my
  * @access  Private (Seeker)
  */
-export const getMyApplications = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getMyApplications = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const seekerId = req.user?.id;
+        const authReq = req as AuthRequest;
+        const seekerId = authReq.user?.id;
 
         if (!seekerId) {
             res.status(401).json({ success: false, message: 'Unauthorized.' });
@@ -142,11 +145,12 @@ export const getMyApplications = async (req: AuthRequest, res: Response, next: N
  * @route   PATCH /api/v1/applications/status/:id
  * @access  Private (Recruiter)
  */
-export const updateApplicationStatus = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const updateApplicationStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        const authReq = req as AuthRequest;
         const { id } = req.params;
         const { status } = req.body;
-        const recruiterId = req.user?.id;
+        const recruiterId = authReq.user?.id;
 
         if (!recruiterId) {
             res.status(401).json({ success: false, message: 'Unauthorized.' });
@@ -185,9 +189,10 @@ export const updateApplicationStatus = async (req: AuthRequest, res: Response, n
     }
 };
 
-export const getPostedJobs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getPostedJobs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const recruiterId = req.user?.id;
+        const authReq = req as AuthRequest;
+        const recruiterId = authReq.user?.id;
 
         if (!recruiterId) {
             res.status(401).json({ success: false, message: 'Unauthorized.' });
@@ -211,10 +216,11 @@ export const getPostedJobs = async (req: AuthRequest, res: Response, next: NextF
  * @route   POST /api/v1/applications/analyze
  * @access  Private (Seeker)
  */
-export const analyzeMatchBeforeApplying = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const analyzeMatchBeforeApplying = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        const authReq = req as AuthRequest;
         const { jobId } = req.body;
-        const seekerId = req.user?.id;
+        const seekerId = authReq.user?.id;
 
         const seeker = await User.findById(seekerId);
         if (!seeker || !seeker.profile) {

@@ -1,12 +1,13 @@
-import type { Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { User } from '../models/Users.js';
 import { Reel } from '../models/Reels.js';
 import { Job } from '../models/Jobs.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 
-export const getFeed = async (req: AuthRequest, res: Response) => {
+export const getFeed = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const userId = req.user?.id;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
 
         if (!userId) {
             return res.status(401).json({ message: 'User not authenticated' });
@@ -23,7 +24,7 @@ export const getFeed = async (req: AuthRequest, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        const limitPerType = Math.ceil(limit / 2); 
+        const limitPerType = Math.ceil(limit / 2);
 
         let feedItems: any[] = [];
 
@@ -46,7 +47,7 @@ export const getFeed = async (req: AuthRequest, res: Response) => {
             if (jobs.length < limitPerType) {
                 const extraJobs = await Job.find({ status: 'open', _id: { $nin: jobs.map((j: any) => j._id) } })
                     .populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location')
-                    .skip(skip) 
+                    .skip(skip)
                     .limit(limitPerType - jobs.length)
                     .lean();
                 jobs = [...jobs, ...extraJobs];

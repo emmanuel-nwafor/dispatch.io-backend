@@ -10,7 +10,8 @@
       "esnext"
     ],
     "types": [
-      "node"
+      "node",
+      "multer"
     ],
     /* Other Outputs */
     "sourceMap": true,

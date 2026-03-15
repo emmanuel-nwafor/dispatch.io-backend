@@ -1,12 +1,13 @@
-import type { Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 import { Job } from '../models/Jobs.js';
 
-export const createJob = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const createJob = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        console.log("Current User in Controller:", req.user);
+        const authReq = req as AuthRequest;
+        console.log("Current User in Controller:", authReq.user);
 
-        const recruiterId = req.user?.id;
+        const recruiterId = authReq.user?.id;
 
         if (!recruiterId) {
             res.status(401).json({
@@ -33,7 +34,7 @@ export const createJob = async (req: AuthRequest, res: Response, next: NextFunct
     }
 };
 
-export const getAllJobs = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const getAllJobs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const {
             search,
