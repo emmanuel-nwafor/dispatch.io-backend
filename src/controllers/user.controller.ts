@@ -102,17 +102,41 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
 
 export const uploadMedia = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Not authorized' });
+            return;
+        }
+
         if (!req.file) {
             res.status(400).json({ success: false, message: 'Please upload a file' });
             return;
         }
 
         const imageUrl = req.file.path;
+        const { type } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        if (type === 'avatar') {
+            user.avatar = imageUrl;
+        } else if (type === 'coverImage' || type === 'cover') {
+            user.coverImage = imageUrl;
+        }
+
+        await user.save();
 
         res.status(200).json({
             success: true,
-            message: 'File uploaded successfully',
-            imageUrl
+            message: 'File uploaded and profile updated successfully',
+            imageUrl,
+            user: AuthService.formatUserResponse(user)
         });
     } catch (error) {
         next(error);
@@ -145,7 +169,7 @@ export const getUserProfile = async (req: Request, res: Response, next: NextFunc
         res.status(200).json({
             success: true,
             user: {
-                ...user.toObject(),
+                ...AuthService.formatUserResponse(user),
                 appliedJobsCount
             }
         });
@@ -188,7 +212,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
         res.status(200).json({
             success: true,
             message: 'Profile updated successfully',
-            user: user.toObject()
+            user: AuthService.formatUserResponse(user)
         });
     } catch (error) {
         next(error);
