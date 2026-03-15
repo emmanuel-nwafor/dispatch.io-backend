@@ -56,7 +56,7 @@ export const getReels = async (req: Request, res: Response, next: NextFunction):
         const query = userId ? { creatorId: userId } : {};
 
         const reels = await Reel.find(query)
-            .populate('creatorId', 'role avatar profile.fullName recruiterProfile.companyName profile.resumeUrl')
+            .populate('creatorId', 'role avatar coverImage profile.fullName recruiterProfile.companyName profile.resumeUrl')
             .sort({ createdAt: -1 });
 
         res.status(200).json({

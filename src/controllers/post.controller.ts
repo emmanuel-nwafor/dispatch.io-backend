@@ -41,7 +41,7 @@ export const getPosts = async (req: Request, res: Response, next: NextFunction):
         const query = userId ? { creatorId: userId } : {};
 
         const posts = await Post.find(query)
-            .populate('creatorId', 'role avatar profile.fullName recruiterProfile.companyName')
+            .populate('creatorId', 'role avatar coverImage profile.fullName recruiterProfile.companyName')
             .sort({ createdAt: -1 });
 
         res.status(200).json({

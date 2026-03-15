@@ -69,7 +69,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         const skip = (Number(page) - 1) * Number(limit);
 
         const jobs = await Job.find(query)
-            .populate('recruiter', 'email profile recruiterProfile')
+            .populate('recruiter', 'email avatar coverImage profile recruiterProfile')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(Number(limit));
@@ -94,7 +94,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
 export const getJobById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
-        const job = await Job.findById(id).populate('recruiter', 'email profile recruiterProfile');
+        const job = await Job.findById(id).populate('recruiter', 'email avatar coverImage profile recruiterProfile');
 
         if (!job) {
             res.status(404).json({ success: false, message: 'Job not found' });

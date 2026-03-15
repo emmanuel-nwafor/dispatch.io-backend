@@ -22,9 +22,9 @@ async function seed() {
         console.log('Connected to database.');
 
         // Clear existing data (Optional, but good for fresh start)
-        console.log('Clearing existing users and jobs...');
-        await User.deleteMany({});
-        await Job.deleteMany({});
+        // console.log('Clearing existing users and jobs...');
+        // await User.deleteMany({});
+        // await Job.deleteMany({});
 
         console.log('Hashing password...');
         const passwordHash = await bcrypt.hash(PASSWORD, 10);

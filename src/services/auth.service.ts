@@ -19,6 +19,8 @@ export class AuthService {
             email: user.email,
             role: user.role,
             isProfileCompleted: user.isProfileCompleted,
+            avatar: user.avatar,
+            coverImage: user.coverImage,
             details: user.role === 'seeker' ? user.profile : user.recruiterProfile
         };
     }
