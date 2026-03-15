@@ -15,6 +15,7 @@ import { protect } from './middleware/auth.middleware.js';
 import authRoutes from './routes/auth/auth.routes.js';
 import feedRoutes from './routes/feed/feed.routes.js';
 import userRoutes from './routes/users/user.routes.js';
+import reelRoutes from './routes/reels/reels.routes.js';
 
 dotenv.config();
 
@@ -44,6 +45,9 @@ app.use('/api/v1/applications', applicationRoutes);
 
 // Feed
 app.use('/api/v1/feed', feedRoutes);
+
+// Reels/Posts
+app.use('/api/v1/reels', reelRoutes);
 
 app.use(errorHandler)
 

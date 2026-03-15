@@ -3,6 +3,7 @@ import { User } from '../models/Users.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 import { AuthService } from '../services/auth.service.js';
 import { sendWelcomeEmail } from '../services/email.service.js';
+import { Application } from '../models/Applications.js';
 
 export const completeProfile = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -95,6 +96,48 @@ export const completeProfile = async (req: AuthRequest, res: Response, next: Nex
     }
 };
 
+export const uploadAvatar = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Not authorized' });
+            return;
+        }
+
+        if (!req.file) {
+            res.status(400).json({ success: false, message: 'Please upload an image' });
+            return;
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        const imageUrl = (req.file as any).path;
+
+        if (user.role === 'seeker' && user.profile) {
+            user.profile.resumeUrl = imageUrl;
+            user.markModified('profile');
+        } else if (user.role === 'recruiter' && user.recruiterProfile) {
+            user.recruiterProfile.location = imageUrl;
+            user.markModified('recruiterProfile');
+        }
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Avatar uploaded successfully',
+            imageUrl,
+            user: AuthService.formatUserResponse(user)
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const getUserProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         let { id } = req.params;
@@ -115,7 +158,16 @@ export const getUserProfile = async (req: Request, res: Response, next: NextFunc
             return;
         }
 
-        res.status(200).json({ success: true, user });
+        // Fetch applied jobs count
+        const appliedJobsCount = await Application.countDocuments({ seekerId: user._id });
+
+        res.status(200).json({
+            success: true,
+            user: {
+                ...user.toObject(),
+                appliedJobsCount
+            }
+        });
     } catch (error) {
         next(error);
     }
