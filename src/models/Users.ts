@@ -6,6 +6,8 @@ export interface IUser extends Document {
     role?: 'seeker' | 'recruiter' | undefined;
     isVerified: boolean;
     isProfileCompleted: boolean;
+    avatar?: string | undefined;
+    coverImage?: string | undefined;
     otpHash?: string | undefined;
     otpExpires?: Date | undefined;
 
@@ -44,6 +46,8 @@ const userSchema = new Schema<IUser>({
 
     isVerified: { type: Boolean, default: false },
     isProfileCompleted: { type: Boolean, default: false },
+    avatar: { type: String, default: '' },
+    coverImage: { type: String, default: '' },
     otpHash: { type: String },
     otpExpires: { type: Date },
 

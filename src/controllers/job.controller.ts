@@ -90,3 +90,81 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 };
+
+export const getJobById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const job = await Job.findById(id).populate('recruiter', 'email profile recruiterProfile');
+
+        if (!job) {
+            res.status(404).json({ success: false, message: 'Job not found' });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            job
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateJob = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const authReq = req as AuthRequest;
+        const recruiterId = authReq.user?.id;
+
+        const job = await Job.findById(id);
+
+        if (!job) {
+            res.status(404).json({ success: false, message: 'Job not found' });
+            return;
+        }
+
+        if (job.recruiter.toString() !== recruiterId) {
+            res.status(401).json({ success: false, message: 'Not authorized to update this job' });
+            return;
+        }
+
+        const updatedJob = await Job.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+
+        res.status(200).json({
+            success: true,
+            message: 'Job updated successfully',
+            job: updatedJob
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const deleteJob = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const authReq = req as AuthRequest;
+        const recruiterId = authReq.user?.id;
+
+        const job = await Job.findById(id);
+
+        if (!job) {
+            res.status(404).json({ success: false, message: 'Job not found' });
+            return;
+        }
+
+        if (job.recruiter.toString() !== recruiterId) {
+            res.status(401).json({ success: false, message: 'Not authorized to delete this job' });
+            return;
+        }
+
+        await job.deleteOne();
+
+        res.status(200).json({
+            success: true,
+            message: 'Job deleted successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+};

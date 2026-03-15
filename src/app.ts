@@ -16,6 +16,7 @@ import authRoutes from './routes/auth/auth.routes.js';
 import feedRoutes from './routes/feed/feed.routes.js';
 import userRoutes from './routes/users/user.routes.js';
 import reelRoutes from './routes/reels/reels.routes.js';
+import postRoutes from './routes/posts/post.routes.js';
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use('/api/v1/feed', feedRoutes);
 
 // Reels/Posts
 app.use('/api/v1/reels', reelRoutes);
+app.use('/api/v1/posts', postRoutes);
 
 app.use(errorHandler)
 

@@ -4,6 +4,8 @@ export interface IReel extends Document {
     creatorId: Types.ObjectId;
     type: 'seeker_pitch' | 'company_tour' | 'job_preview';
     videoUrl: string;
+    assetId?: string;
+    playbackId?: string;
     thumbnailUrl: string;
     title: string;
     description: string;
@@ -20,6 +22,8 @@ const reelSchema = new Schema<IReel>({
         required: true
     },
     videoUrl: { type: String, required: true },
+    assetId: { type: String },
+    playbackId: { type: String },
     thumbnailUrl: { type: String, required: true },
     title: { type: String, required: true },
     description: { type: String },

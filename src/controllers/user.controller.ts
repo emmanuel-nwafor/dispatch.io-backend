@@ -37,7 +37,7 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
             companyLocation,
             autoApplyEnabled,
             autoApplyMinMatchScore,
-            profileImage,
+            avatar,
             coverImage
         } = req.body;
 
@@ -50,6 +50,8 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
 
         user.role = role;
         user.isProfileCompleted = true;
+        if (avatar) user.avatar = avatar;
+        if (coverImage) user.coverImage = coverImage;
 
         if (role === 'seeker') {
             user.profile = {
@@ -57,7 +59,7 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
                 phone: phone || '',
                 bio: bio || '',
                 location: location || '',
-                resumeUrl: profileImage || user.profile?.resumeUrl || '',
+                resumeUrl: user.profile?.resumeUrl || '',
                 skills: skills || [],
                 experienceYear: Number(experienceYear) || 0,
                 education: education || '',
@@ -75,20 +77,10 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
                 companyWebsite: companyWebsite || '',
                 industry: industry || '',
                 companySize: companySize || '',
-                location: companyLocation || location || coverImage || '',
+                location: companyLocation || location || '',
                 accountabilityScore: 100,
                 verifiedCompany: false
             };
-            // Note: If profileImage is explicitly provided, we want to ensure it's saved.
-            // For recruiters, we currently don't have a separate 'avatar' field in the schema, 
-            // so we'll ensure the profile object exists if needed or just use the recruiterProfile fields.
-            if (profileImage) {
-                user.profile = {
-                    ...user.profile,
-                    resumeUrl: profileImage
-                } as any;
-                user.markModified('profile');
-            }
             user.markModified('recruiterProfile');
         }
 
@@ -180,6 +172,74 @@ export const getUserProfile = async (req: Request, res: Response, next: NextFunc
                 ...user.toObject(),
                 appliedJobsCount
             }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Not authorized' });
+            return;
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        // Update top level fields
+        if (req.body.avatar) user.avatar = req.body.avatar;
+        if (req.body.coverImage) user.coverImage = req.body.coverImage;
+
+        // Update role-specific profile
+        if (user.role === 'seeker' && user.profile) {
+            user.profile = { ...user.profile, ...req.body };
+            user.markModified('profile');
+        } else if (user.role === 'recruiter' && user.recruiterProfile) {
+            user.recruiterProfile = { ...user.recruiterProfile, ...req.body };
+            user.markModified('recruiterProfile');
+        }
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully',
+            user: user.toObject()
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const deleteUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Not authorized' });
+            return;
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        await user.deleteOne();
+
+        res.status(200).json({
+            success: true,
+            message: 'User account deleted successfully'
         });
     } catch (error) {
         next(error);

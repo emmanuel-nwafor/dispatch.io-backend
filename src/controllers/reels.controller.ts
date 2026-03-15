@@ -2,6 +2,8 @@ import type { Request, Response, NextFunction } from 'express';
 import { Reel } from '../models/Reels.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 
+import { MuxService } from '../services/mux.service.js';
+
 export const createReel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const authReq = req as AuthRequest;
@@ -14,23 +16,33 @@ export const createReel = async (req: Request, res: Response, next: NextFunction
         const { title, description, type, tags } = req.body;
 
         if (!req.file) {
-            res.status(400).json({ success: false, message: 'Please upload a video/image for the post' });
+            res.status(400).json({ success: false, message: 'Please upload a video for the reel' });
             return;
         }
+
+        // Video is already on Cloudinary via middleware
+        const cloudinaryUrl = req.file.path;
+
+        // Upload to Mux
+        console.log('Uploading video to Mux...');
+        const asset = await MuxService.uploadVideo(cloudinaryUrl);
+        const playbackId = MuxService.getPlaybackId(asset);
 
         const reel = await Reel.create({
             creatorId: userId,
             title,
             description,
             type: type || 'seeker_pitch',
-            videoUrl: req.file.path,
-            thumbnailUrl: req.file.path,
+            videoUrl: cloudinaryUrl,
+            assetId: asset.id,
+            playbackId: playbackId,
+            thumbnailUrl: `https://image.mux.com/${playbackId}/thumbnail.jpg`,
             tags: tags ? (Array.isArray(tags) ? tags : JSON.parse(tags)) : []
         });
 
         res.status(201).json({
             success: true,
-            message: 'Post created successfully',
+            message: 'Reel created successfully',
             data: reel
         });
     } catch (error) {
