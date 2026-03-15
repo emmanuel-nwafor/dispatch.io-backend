@@ -36,7 +36,9 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
             companySize,
             companyLocation,
             autoApplyEnabled,
-            autoApplyMinMatchScore
+            autoApplyMinMatchScore,
+            profileImage,
+            coverImage
         } = req.body;
 
         const user = await User.findById(userId);
@@ -55,7 +57,7 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
                 phone: phone || '',
                 bio: bio || '',
                 location: location || '',
-                resumeUrl: user.profile?.resumeUrl || '',
+                resumeUrl: profileImage || user.profile?.resumeUrl || '',
                 skills: skills || [],
                 experienceYear: Number(experienceYear) || 0,
                 education: education || '',
@@ -73,11 +75,20 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
                 companyWebsite: companyWebsite || '',
                 industry: industry || '',
                 companySize: companySize || '',
-                location: companyLocation || location || '',
+                location: companyLocation || location || coverImage || '',
                 accountabilityScore: 100,
                 verifiedCompany: false
             };
-            user.profile = undefined;
+            // Note: If profileImage is explicitly provided, we want to ensure it's saved.
+            // For recruiters, we currently don't have a separate 'avatar' field in the schema, 
+            // so we'll ensure the profile object exists if needed or just use the recruiterProfile fields.
+            if (profileImage) {
+                user.profile = {
+                    ...user.profile,
+                    resumeUrl: profileImage
+                } as any;
+                user.markModified('profile');
+            }
             user.markModified('recruiterProfile');
         }
 

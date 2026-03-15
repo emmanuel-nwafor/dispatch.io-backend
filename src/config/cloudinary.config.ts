@@ -13,7 +13,7 @@ const storage = new CloudinaryStorage({
     params: async (req, file) => {
         // Determine folder based on fieldname or other criteria
         let folder = 'dispatch_io_uploads';
-        if (file.fieldname === 'avatar' || file.fieldname === 'profileImage') {
+        if (file.fieldname === 'avatar' || file.fieldname === 'profileImage' || file.fieldname === 'coverImage' || file.fieldname === 'image') {
             folder = 'dispatch_io_profiles';
         } else if (file.fieldname === 'postImage') {
             folder = 'dispatch_io_posts';
