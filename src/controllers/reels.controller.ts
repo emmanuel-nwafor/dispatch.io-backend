@@ -50,6 +50,24 @@ export const createReel = async (req: Request, res: Response, next: NextFunction
     }
 };
 
+export const getReels = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { userId } = req.query;
+        const query = userId ? { creatorId: userId } : {};
+
+        const reels = await Reel.find(query)
+            .populate('creatorId', 'role avatar profile.fullName recruiterProfile.companyName profile.resumeUrl')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: reels
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const deleteReel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;

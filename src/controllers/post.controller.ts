@@ -37,7 +37,10 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
 
 export const getPosts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const posts = await Post.find()
+        const { userId } = req.query;
+        const query = userId ? { creatorId: userId } : {};
+
+        const posts = await Post.find(query)
             .populate('creatorId', 'role avatar profile.fullName recruiterProfile.companyName')
             .sort({ createdAt: -1 });
 

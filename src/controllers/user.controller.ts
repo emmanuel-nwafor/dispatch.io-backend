@@ -100,43 +100,19 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
     }
 };
 
-export const uploadAvatar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const uploadMedia = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const authReq = req as AuthRequest;
-        const userId = authReq.user?.id;
-        if (!userId) {
-            res.status(401).json({ success: false, message: 'Not authorized' });
-            return;
-        }
-
         if (!req.file) {
-            res.status(400).json({ success: false, message: 'Please upload an image' });
-            return;
-        }
-
-        const user = await User.findById(userId);
-        if (!user) {
-            res.status(404).json({ success: false, message: 'User not found' });
+            res.status(400).json({ success: false, message: 'Please upload a file' });
             return;
         }
 
         const imageUrl = req.file.path;
 
-        if (user.role === 'seeker' && user.profile) {
-            user.profile.resumeUrl = imageUrl;
-            user.markModified('profile');
-        } else if (user.role === 'recruiter' && user.recruiterProfile) {
-            user.recruiterProfile.location = imageUrl;
-            user.markModified('recruiterProfile');
-        }
-
-        await user.save();
-
         res.status(200).json({
             success: true,
-            message: 'Avatar uploaded successfully',
-            imageUrl,
-            user: AuthService.formatUserResponse(user)
+            message: 'File uploaded successfully',
+            imageUrl
         });
     } catch (error) {
         next(error);
