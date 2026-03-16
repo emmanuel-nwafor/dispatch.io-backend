@@ -17,13 +17,30 @@ export const MuxService = {
     uploadVideo: async (videoUrl: string) => {
         try {
             const asset = await video.assets.create({
-                input: [{ url: videoUrl }],
-                playback_policy: ['public'],
-                inputs: []
+                inputs: [{ url: videoUrl }],
+                playback_policy: ['public']
             });
             return asset;
         } catch (error) {
             console.error('Error uploading to Mux:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Create a direct upload URL for frontend to use
+     */
+    createDirectUpload: async () => {
+        try {
+            const upload = await video.uploads.create({
+                new_asset_settings: {
+                    playback_policy: ['public'],
+                },
+                cors_origin: '*', // Allow uploads from the mobile app
+            });
+            return upload;
+        } catch (error) {
+            console.error('Error creating Mux direct upload:', error);
             throw error;
         }
     },
@@ -36,6 +53,22 @@ export const MuxService = {
             await video.assets.delete(assetId);
         } catch (error) {
             console.error('Error deleting from Mux:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get asset by upload ID
+     */
+    getAssetByUploadId: async (uploadId: string) => {
+        try {
+            const upload = await video.uploads.retrieve(uploadId);
+            if (upload.asset_id) {
+                return await video.assets.retrieve(upload.asset_id);
+            }
+            return null;
+        } catch (error) {
+            console.error('Error retrieving asset by upload ID:', error);
             throw error;
         }
     },

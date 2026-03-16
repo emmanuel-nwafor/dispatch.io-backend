@@ -4,6 +4,21 @@ import type { AuthRequest } from '../middleware/auth.middleware.js';
 
 import { MuxService } from '../services/mux.service.js';
 
+export const getUploadUrl = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const upload = await MuxService.createDirectUpload();
+        res.status(200).json({
+            success: true,
+            data: {
+                uploadUrl: upload.url,
+                uploadId: upload.id
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const createReel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const authReq = req as AuthRequest;
@@ -13,29 +28,45 @@ export const createReel = async (req: Request, res: Response, next: NextFunction
             return;
         }
 
-        const { title, description, type, tags } = req.body;
+        const { title, description, type, tags, muxAssetId, muxPlaybackId, muxUploadId, videoUrl } = req.body;
 
-        if (!req.file) {
-            res.status(400).json({ success: false, message: 'Please upload a video for the reel' });
-            return;
+        let finalVideoUrl = videoUrl;
+        let assetId = muxAssetId;
+        let playbackId = muxPlaybackId;
+
+        if (muxUploadId) {
+            // Case 1: Direct upload from frontend
+            console.log(`Verifying Mux upload: ${muxUploadId}`);
+            const asset = await MuxService.getAssetByUploadId(muxUploadId);
+            if (asset) {
+                assetId = asset.id;
+                playbackId = MuxService.getPlaybackId(asset);
+            } else {
+                res.status(400).json({ success: false, message: 'Video is still processing or upload not found' });
+                return;
+            }
+        } else if (req.file) {
+            // Case 2: Uploaded via Cloudinary (fallback)
+            finalVideoUrl = req.file.path;
+            console.log('Uploading video from Cloudinary to Mux...');
+            const asset = await MuxService.uploadVideo(finalVideoUrl);
+            assetId = asset.id;
+            playbackId = MuxService.getPlaybackId(asset);
         }
 
-        // Video is already on Cloudinary via middleware
-        const cloudinaryUrl = req.file.path;
-
-        // Upload to Mux
-        console.log('Uploading video to Mux...');
-        const asset = await MuxService.uploadVideo(cloudinaryUrl);
-        const playbackId = MuxService.getPlaybackId(asset);
+        if (!assetId || !playbackId) {
+            res.status(400).json({ success: false, message: 'Please upload a video or provide Mux metadata' });
+            return;
+        }
 
         const reel = await Reel.create({
             creatorId: userId,
             title,
             description,
             type: type || 'seeker_pitch',
-            videoUrl: cloudinaryUrl,
-            assetId: asset.id,
-            playbackId: playbackId,
+            videoUrl: finalVideoUrl || `https://stream.mux.com/${playbackId}.m3u8`, // Fallback for direct uploads
+            assetId,
+            playbackId,
             thumbnailUrl: `https://image.mux.com/${playbackId}/thumbnail.jpg`,
             tags: tags ? (Array.isArray(tags) ? tags : JSON.parse(tags)) : []
         });

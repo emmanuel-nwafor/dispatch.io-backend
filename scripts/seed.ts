@@ -38,6 +38,8 @@ async function seed() {
                 role: 'recruiter',
                 isVerified: true,
                 isProfileCompleted: true,
+                avatar: 'https://i.pravatar.cc/300?u=jane',
+                coverImage: 'https://images.unsplash.com/photo-1557683311-eac922347aa1?w=1000',
                 recruiterProfile: {
                     companyName: 'TechCorp',
                     companyWebsite: 'https://techcorp.com',
@@ -54,6 +56,8 @@ async function seed() {
                 role: 'recruiter',
                 isVerified: true,
                 isProfileCompleted: true,
+                avatar: 'https://i.pravatar.cc/300?u=john',
+                coverImage: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=1000',
                 recruiterProfile: {
                     companyName: 'InnovateAI',
                     companyWebsite: 'https://innovateai.io',
@@ -75,6 +79,8 @@ async function seed() {
                 role: 'seeker',
                 isVerified: true,
                 isProfileCompleted: true,
+                avatar: 'https://i.pravatar.cc/300?u=alice',
+                coverImage: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1000',
                 profile: {
                     fullName: 'Alice Johnson',
                     phone: '+1234567890',
@@ -93,6 +99,8 @@ async function seed() {
                 role: 'seeker',
                 isVerified: true,
                 isProfileCompleted: true,
+                avatar: 'https://i.pravatar.cc/300?u=bob',
+                coverImage: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1000',
                 profile: {
                     fullName: 'Bob Wilson',
                     phone: '+0987654321',
