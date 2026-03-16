@@ -5,6 +5,7 @@ const getTransporter = () => {
         throw new Error("Email credentials are missing in process.env");
     }
 
+    // Force IPv4 for Render compatibility
     return nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
@@ -15,6 +16,7 @@ const getTransporter = () => {
         },
         family: 4,
         connectionTimeout: 15000,
+        greetingTimeout: 15000,
         tls: {
             rejectUnauthorized: false,
             minVersion: "TLSv1.2"
@@ -89,7 +91,12 @@ export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
         </tr>`;
 
     const html = emailLayout("Verify your account", "Enter the 6-digit code below to finish setting up your account.", action);
-    await transporter.sendMail({ from: `"dispatch.io" <${process.env.EMAIL_USER}>`, to, subject: `${otp} is your verification code`, html });
+    try {
+        await transporter.sendMail({ from: `"dispatch.io" <${process.env.EMAIL_USER}>`, to, subject: `${otp} is your verification code`, html });
+    } catch (error) {
+        console.error(`[EMAIL ERROR] Failed to send OTP to ${to}:`, error);
+        throw error; // Re-throw for controllers to handle
+    }
 };
 
 export const sendWelcomeEmail = async (to: string, name: string): Promise<void> => {
@@ -140,12 +147,16 @@ export const sendWelcomeEmail = async (to: string, name: string): Promise<void> 
 
     const html = emailLayout(`The future of your career starts here.`, welcomeBody, action);
 
-    await transporter.sendMail({
-        from: `"dispatch.io" <${process.env.EMAIL_USER}>`,
-        to,
-        subject: "Your journey with dispatch.io begins now 🚀",
-        html
-    });
+    try {
+        await transporter.sendMail({
+            from: `"dispatch.io" <${process.env.EMAIL_USER}>`,
+            to,
+            subject: "Your journey with dispatch.io begins now 🚀",
+            html
+        });
+    } catch (error) {
+        console.error(`[EMAIL ERROR] Failed to send welcome email to ${to}:`, error);
+    }
 };
 
 export const sendApplicationStatusEmail = async (to: string, jobTitle: string, status: string): Promise<void> => {

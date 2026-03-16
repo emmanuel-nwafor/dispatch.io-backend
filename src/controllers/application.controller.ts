@@ -60,10 +60,14 @@ export const applyToJob = async (req: Request, res: Response, next: NextFunction
             application
         });
 
-        // Notify recruiter
+        // Notify recruiter (non-blocking)
         const recruiter = await User.findById(job.recruiter);
         if (recruiter) {
-            await sendRecruiterAlert(recruiter.email, job.title);
+            try {
+                await sendRecruiterAlert(recruiter.email, job.title);
+            } catch (e) {
+                console.error("[Application] Recruiter alert failed:", e);
+            }
         }
     } catch (error) {
         next(error);
@@ -179,10 +183,14 @@ export const updateApplicationStatus = async (req: Request, res: Response, next:
             application
         });
 
-        // Notify seeker of status update
+        // Notify seeker of status update (non-blocking)
         const seeker = await User.findById(application.seekerId);
         if (seeker) {
-            await sendApplicationStatusEmail(seeker.email, (job as any).title, status);
+            try {
+                await sendApplicationStatusEmail(seeker.email, (job as any).title, status);
+            } catch (e) {
+                console.error("[Application] Status update email failed:", e);
+            }
         }
     } catch (error) {
         next(error);

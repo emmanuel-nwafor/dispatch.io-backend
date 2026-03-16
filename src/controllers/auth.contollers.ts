@@ -126,8 +126,12 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
     const token = AuthService.generateToken(newUser);
 
-    // Send welcome email (using "New Member" since fullName isn't set yet)
-    await sendWelcomeEmail(newUser.email, "New Member");
+    // Send welcome email (non-blocking)
+    try {
+      await sendWelcomeEmail(newUser.email, "New Member");
+    } catch (e) {
+      console.error("[Auth] Welcome email failed:", e);
+    }
 
     res.status(201).json({
       success: true,

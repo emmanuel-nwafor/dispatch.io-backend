@@ -101,7 +101,11 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
         await user.save();
 
         if (fullName) {
-            await sendWelcomeEmail(user.email, fullName);
+            try {
+                await sendWelcomeEmail(user.email, fullName);
+            } catch (emailError) {
+                console.error('[ERROR] Failed to send welcome email:', emailError);
+            }
         }
 
         res.status(200).json({
