@@ -14,13 +14,34 @@ export interface IUser extends Document {
     // Expanded Seeker Profile
     profile?: {
         fullName: string;
+        headline: string;
         phone: string;
         bio: string;
         location: string;
         resumeUrl: string;
         skills: string[];
-        experienceYear: number;
-        education: string;
+        experience: Array<{
+            id: string;
+            title: string;
+            company: string;
+            startDate: string;
+            endDate: string;
+            current: boolean;
+            description: string;
+        }>;
+        education: Array<{
+            id: string;
+            school: string;
+            degree: string;
+            field: string;
+            startDate: string;
+            endDate: string;
+        }>;
+        languages: string[];
+        birthday: string;
+        gender: string;
+        portfolioUrl: string;
+        linkedInUrl: string;
         preferredJobTypes: string[];
         autoApply?: {
             enabled: boolean;
@@ -53,13 +74,19 @@ const userSchema = new Schema<IUser>({
 
     profile: {
         fullName: { type: String, default: '' },
+        headline: { type: String, default: '' },
         phone: { type: String, default: '' },
         bio: { type: String, default: '' },
         location: { type: String, default: '' },
         resumeUrl: { type: String, default: '' },
         skills: { type: [String], default: [] },
-        experienceYear: { type: Number, default: 0 },
-        education: { type: String, default: '' },
+        experience: { type: [Schema.Types.Mixed], default: [] },
+        education: { type: [Schema.Types.Mixed], default: [] },
+        languages: { type: [String], default: [] },
+        birthday: { type: String, default: '' },
+        gender: { type: String, default: '' },
+        portfolioUrl: { type: String, default: '' },
+        linkedInUrl: { type: String, default: '' },
         preferredJobTypes: { type: [String], default: [] },
         autoApply: {
             enabled: { type: Boolean, default: false },
