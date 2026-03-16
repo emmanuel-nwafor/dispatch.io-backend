@@ -20,6 +20,8 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
             return;
         }
 
+        console.log('[DEBUG] CompleteProfile Payload:', JSON.stringify(req.body, null, 2));
+
         const {
             role,
             fullName,
