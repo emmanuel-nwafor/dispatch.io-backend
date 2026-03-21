@@ -37,21 +37,21 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction) =
             }
 
             let jobs = await Job.find(query)
-                .populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location avatar')
+                .populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar')
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
 
             // Find reels (company_tour, job_preview)
             const reels = await Reel.find({ type: { $in: ['company_tour', 'job_preview'] } })
-                .populate('creatorId', 'recruiterProfile.companyName recruiterProfile.location avatar')
+                .populate('creatorId', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar')
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
 
             // Find posts
             const posts = await Post.find()
-                .populate('creatorId', 'recruiterProfile.companyName recruiterProfile.location avatar')
+                .populate('creatorId', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar')
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
@@ -72,13 +72,13 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction) =
                 .lean();
 
             const reels = await Reel.find({ type: 'seeker_pitch' })
-                .populate('creatorId', 'profile.fullName profile.resumeUrl avatar')
+                .populate('creatorId', 'profile.fullName recruiterProfile.companyName profile.resumeUrl avatar')
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
 
             const posts = await Post.find()
-                .populate('creatorId', 'profile.fullName profile.location avatar')
+                .populate('creatorId', 'profile.fullName recruiterProfile.companyName profile.location avatar')
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
@@ -120,7 +120,7 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
         let item: any = null;
 
         if (type === 'job') {
-            item = await Job.findById(id).populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location avatar').lean();
+            item = await Job.findById(id).populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar').lean();
             if (item) item.feedType = 'job';
         } else if (type === 'reel') {
             item = await Reel.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
@@ -132,7 +132,7 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
             item = await User.findById(id).select('-passwordHash -otpHash').lean();
             if (item) item.feedType = 'candidate';
         } else {
-            item = await Job.findById(id).populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location avatar').lean();
+            item = await Job.findById(id).populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar').lean();
             if (item) {
                 item.feedType = 'job';
             } else {

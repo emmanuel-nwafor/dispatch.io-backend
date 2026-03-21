@@ -16,6 +16,7 @@ export class AuthService {
     static formatUserResponse(user: IUser) {
         return {
             id: user._id,
+            _id: user._id, // Adding _id for consistency
             email: user.email,
             role: user.role,
             isProfileCompleted: user.isProfileCompleted,
@@ -23,6 +24,8 @@ export class AuthService {
             profileImage: user.avatar || '',
             coverImage: user.coverImage || '',
             coverPhoto: user.coverImage || '',
+            profile: user.profile,
+            recruiterProfile: user.recruiterProfile,
             details: user.role === 'seeker' ? user.profile : user.recruiterProfile
         };
     }
