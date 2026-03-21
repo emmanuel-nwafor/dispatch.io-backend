@@ -111,3 +111,48 @@ function shuffleArray(array: any[]) {
     }
     return array;
 }
+
+export const getFeedItemById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const { type } = req.query;
+
+        let item: any = null;
+
+        if (type === 'job') {
+            item = await Job.findById(id).populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location avatar').lean();
+            if (item) item.feedType = 'job';
+        } else if (type === 'reel') {
+            item = await Reel.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+            if (item) item.feedType = 'reel';
+        } else if (type === 'post') {
+            item = await Post.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+            if (item) item.feedType = 'post';
+        } else if (type === 'candidate') {
+            item = await User.findById(id).select('-passwordHash -otpHash').lean();
+            if (item) item.feedType = 'candidate';
+        } else {
+            item = await Job.findById(id).populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location avatar').lean();
+            if (item) {
+                item.feedType = 'job';
+            } else {
+                item = await Reel.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+                if (item) {
+                    item.feedType = 'reel';
+                } else {
+                    item = await Post.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+                    if (item) item.feedType = 'post';
+                }
+            }
+        }
+
+        if (!item) {
+            return res.status(404).json({ message: 'Feed item not found' });
+        }
+
+        return res.status(200).json({ success: true, data: item });
+    } catch (error: any) {
+        console.error('Error fetching feed item:', error);
+        return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
