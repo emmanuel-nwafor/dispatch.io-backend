@@ -6,7 +6,10 @@ import { createPost, deletePost, getPosts } from '../../controllers/post.control
 const router = Router();
 
 router.get('/', protect, getPosts);
-router.post('/', protect, upload.array('images', 5), createPost);
+router.post('/', protect, upload.fields([
+    { name: 'images', maxCount: 5 },
+    { name: 'video', maxCount: 1 }
+]), createPost);
 router.delete('/:id', protect, deletePost);
 
 export default router;

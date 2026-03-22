@@ -4,6 +4,8 @@ export interface IPost extends Document {
     creatorId: Types.ObjectId;
     content: string;
     images: string[];
+    videoUrl?: string | undefined;
+    thumbnailUrl?: string | undefined;
     likes: Types.ObjectId[];
     comments: {
         userId: Types.ObjectId;
@@ -16,6 +18,8 @@ const postSchema = new Schema<IPost>({
     creatorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true },
     images: { type: [String], default: [] },
+    videoUrl: { type: String },
+    thumbnailUrl: { type: String },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     comments: [{
         userId: { type: Schema.Types.ObjectId, ref: 'User' },

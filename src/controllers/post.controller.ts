@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { Post } from '../models/Posts.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
+import { Types } from 'mongoose';
 
 export const createPost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -11,18 +12,24 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
             return;
         }
 
-        const { content } = req.body;
-        const images = req.files ? (req.files as any[]).map(f => f.path) : [];
+        const content = req.body.content as string | undefined;
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
-        if (!content && images.length === 0) {
-            res.status(400).json({ success: false, message: 'Content or images are required' });
+        const images = files?.images ? files.images.map(f => f.path) : [];
+        const videoUrl = files?.video?.[0]?.path;
+        const thumbnailUrl = (req.body.thumbnailUrl as string | undefined) || (videoUrl ? videoUrl.replace(/\.[^.]+$/, '.jpg') : undefined);
+
+        if (!content && images.length === 0 && !videoUrl) {
+            res.status(400).json({ success: false, message: 'Content, images, or video are required' });
             return;
         }
 
         const post = await Post.create({
-            creatorId: userId,
-            content,
-            images
+            creatorId: new Types.ObjectId(userId),
+            content: content || '',
+            images,
+            videoUrl,
+            thumbnailUrl
         });
 
         res.status(201).json({
