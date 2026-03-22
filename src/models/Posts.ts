@@ -14,6 +14,9 @@ export interface IPost extends Document {
         text: string;
         createdAt: Date;
     }[];
+    parentPostId?: Types.ObjectId | undefined;
+    isReshare: boolean;
+    mentions: Types.ObjectId[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -31,7 +34,10 @@ const postSchema = new Schema<IPost>({
         userId: { type: Schema.Types.ObjectId, ref: 'User' },
         text: { type: String, required: true },
         createdAt: { type: Date, default: Date.now }
-    }]
+    }],
+    parentPostId: { type: Schema.Types.ObjectId, ref: 'Post' },
+    isReshare: { type: Boolean, default: false },
+    mentions: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 }, {
     timestamps: true
 });

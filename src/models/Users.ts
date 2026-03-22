@@ -2,6 +2,7 @@ import { Schema, model, type Document } from 'mongoose';
 
 export interface IUser extends Document {
     email: string;
+    username?: string | undefined;
     passwordHash?: string | undefined;
     role?: 'seeker' | 'recruiter' | undefined;
     isVerified: boolean;
@@ -13,14 +14,14 @@ export interface IUser extends Document {
 
     // Expanded Seeker Profile
     profile?: {
-        fullName: string;
-        headline: string;
-        phone: string;
-        bio: string;
-        location: string;
-        resumeUrl: string;
-        skills: string[];
-        experience: Array<{
+        fullName?: string;
+        headline?: string;
+        phone?: string;
+        bio?: string;
+        location?: string;
+        resumeUrl?: string;
+        skills?: string[];
+        experience?: Array<{
             id: string;
             title: string;
             company: string;
@@ -29,7 +30,7 @@ export interface IUser extends Document {
             current: boolean;
             description: string;
         }>;
-        education: Array<{
+        education?: Array<{
             id: string;
             school: string;
             degree: string;
@@ -37,12 +38,12 @@ export interface IUser extends Document {
             startDate: string;
             endDate: string;
         }>;
-        languages: string[];
-        birthday: string;
-        gender: string;
-        portfolioUrl: string;
-        linkedInUrl: string;
-        preferredJobTypes: string[];
+        languages?: string[];
+        birthday?: string;
+        gender?: string;
+        portfolioUrl?: string;
+        linkedInUrl?: string;
+        preferredJobTypes?: string[];
         autoApply?: {
             enabled: boolean;
             minMatchScore: number;
@@ -64,6 +65,7 @@ export interface IUser extends Document {
 
 const userSchema = new Schema<IUser>({
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    username: { type: String, unique: true, lowercase: true, trim: true, sparse: true },
     passwordHash: { type: String },
     role: { type: String, enum: ['seeker', 'recruiter'] },
 

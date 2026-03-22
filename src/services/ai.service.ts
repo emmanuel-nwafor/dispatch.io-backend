@@ -29,8 +29,8 @@ export class AiService {
         SEEKER PROFILE:
         Bio: ${seekerProfile.bio}
         Skills: ${seekerProfile.skills.join(', ')}
-        Experience Years: ${seekerProfile.experienceYear}
-        Education: ${seekerProfile.education}
+        Experience: ${JSON.stringify(seekerProfile.experience || [])}
+        Education: ${JSON.stringify(seekerProfile.education || [])}
 
         TASK:
         1. Rate the match from 0 to 100. Be honest. If they lack critical skills, the score should be lower.

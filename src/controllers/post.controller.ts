@@ -1,10 +1,25 @@
 import type { Request, Response, NextFunction } from 'express';
 import { Post } from '../models/Posts.js';
+import { User } from '../models/Users.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 import { Types } from 'mongoose';
 import { cloudinary } from '../config/cloudinary.config.js';
 import { MuxService } from '../services/mux.service.js';
 import { Readable } from 'stream';
+
+// Helper to parse mentions and update post
+const parseMentions = async (text: string, post: any) => {
+    const mentions = text.match(/@(\w+)/g);
+    if (mentions) {
+        for (const mention of mentions) {
+            const username = mention.substring(1).toLowerCase();
+            const mentionedUser = await User.findOne({ username });
+            if (mentionedUser && !post.mentions.includes(mentionedUser._id)) {
+                post.mentions.push(mentionedUser._id);
+            }
+        }
+    }
+};
 
 export const createPost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -44,17 +59,6 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
         let thumbnailUrl: string | undefined;
 
         if (videoFile) {
-            // Since Mux needs a URL to pull from, we could either:
-            // A. Upload to Cloudinary temporarily (but size limit is the problem)
-            // B. Use Mux direct upload (frontend is better for this)
-            // For now, to solve the "File size too large" on Cloudinary, 
-            // we'll try to use a Mux direct upload process if possible, 
-            // but that's complex from the backend with memory buffers.
-
-            // BETTER APPROACH: The user said Cloudinary has a 10MB limit. 
-            // If the video is LARGE, we definitely need Mux.
-
-            // To keep it simple but functional for now:
             // Let's create a Mux direct upload and PUSH the buffer to it.
             const muxUpload = await MuxService.createDirectUpload();
 
@@ -99,6 +103,12 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
             muxPlaybackId, // Will be updated by webhook later typically, or we can poll
             thumbnailUrl: req.body.thumbnailUrl
         });
+
+        // Parse mentions in post content
+        if (content) {
+            await parseMentions(content, post);
+            await post.save();
+        }
 
         res.status(201).json({
             success: true,
@@ -152,6 +162,136 @@ export const deletePost = async (req: Request, res: Response, next: NextFunction
             success: true,
             message: 'Post deleted successfully'
         });
+        return;
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const toggleLikePost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'User not authenticated' });
+            return;
+        }
+
+        const post = await Post.findById(id);
+        if (!post) {
+            res.status(404).json({ success: false, message: 'Post not found' });
+            return;
+        }
+
+        const userObjectId = new Types.ObjectId(userId);
+        const index = post.likes.indexOf(userObjectId);
+
+        if (index === -1) {
+            post.likes.push(userObjectId);
+        } else {
+            post.likes.splice(index, 1);
+        }
+
+        await post.save();
+
+        res.status(200).json({
+            success: true,
+            message: index === -1 ? 'Post liked' : 'Post unliked',
+            likesCount: post.likes.length,
+            isLiked: index === -1
+        });
+        return;
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const addComment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { text } = req.body;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'User not authenticated' });
+            return;
+        }
+
+        if (!text) {
+            res.status(400).json({ success: false, message: 'Comment text is required' });
+            return;
+        }
+
+        const post = await Post.findById(id);
+        if (!post) {
+            res.status(404).json({ success: false, message: 'Post not found' });
+            return;
+        }
+
+        const comment = {
+            userId: new Types.ObjectId(userId),
+            text,
+            createdAt: new Date()
+        };
+
+        post.comments.push(comment);
+
+        // Parse mentions in the comment text
+        await parseMentions(text, post);
+
+        await post.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Comment added successfully',
+            comment
+        });
+        return;
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const resharePost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { content } = req.body;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'User not authenticated' });
+            return;
+        }
+
+        const originalPost = await Post.findById(id);
+        if (!originalPost) {
+            res.status(404).json({ success: false, message: 'Original post not found' });
+            return;
+        }
+
+        const reshare = await Post.create({
+            creatorId: new Types.ObjectId(userId),
+            content: content || '',
+            parentPostId: originalPost._id,
+            isReshare: true
+        });
+
+        // Parse mentions in reshare content
+        if (content) {
+            await parseMentions(content, reshare);
+            await reshare.save();
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'Post reshared successfully',
+            data: reshare
+        });
+        return;
     } catch (error) {
         next(error);
     }

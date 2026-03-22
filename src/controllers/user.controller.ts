@@ -4,6 +4,7 @@ import type { AuthRequest } from '../middleware/auth.middleware.js';
 import { AuthService } from '../services/auth.service.js';
 import { sendWelcomeEmail } from '../services/email.service.js';
 import { Application } from '../models/Applications.js';
+import mongoose from 'mongoose';
 
 export const completeProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -24,6 +25,7 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
 
         const {
             role,
+            username,
             fullName,
             headline,
             phone,
@@ -58,6 +60,7 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
 
         user.role = role;
         user.isProfileCompleted = true;
+        if (username) user.username = username;
         if (avatar) user.avatar = avatar;
         if (coverImage) user.coverImage = coverImage;
 
@@ -163,18 +166,40 @@ export const uploadMedia = async (req: Request, res: Response, next: NextFunctio
 
 export const getUserProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        let { id } = req.params;
+        const { id } = req.params;
+        if (!id || typeof id !== 'string') {
+            res.status(400).json({ success: false, message: 'Invalid User ID provided.' });
+            return;
+        }
 
-        if (id === 'me') {
+        let targetId: string = id;
+
+        if (targetId === 'me') {
             const authReq = req as AuthRequest;
             if (!authReq.user?.id) {
                 res.status(401).json({ success: false, message: 'Not authorized to access "me" without valid token.' });
                 return;
             }
-            id = authReq.user.id;
+            targetId = authReq.user.id;
         }
 
-        const user = await User.findById(id).select('-passwordHash -__v');
+        let user;
+        if (mongoose.Types.ObjectId.isValid(targetId)) {
+            user = await User.findById(targetId).select('-passwordHash -__v');
+        } else {
+            // Try searching by username (case-insensitive)
+            user = await User.findOne({ username: targetId.toLowerCase() } as any).select('-passwordHash -__v');
+            
+            if (!user) {
+                // Fallback: search by fullName or companyName if no user found by username
+                user = await User.findOne({
+                    $or: [
+                        { 'profile.fullName': targetId },
+                        { 'recruiterProfile.companyName': targetId }
+                    ]
+                } as any).select('-passwordHash -__v');
+            }
+        }
 
         if (!user) {
             res.status(404).json({ success: false, message: 'User not found' });

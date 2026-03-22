@@ -22,9 +22,9 @@ async function seed() {
         console.log('Connected to database.');
 
         // Clear existing data (Optional, but good for fresh start)
-        // console.log('Clearing existing users and jobs...');
-        // await User.deleteMany({});
-        // await Job.deleteMany({});
+        console.log('Clearing existing users and jobs...');
+        await User.deleteMany({});
+        await Job.deleteMany({});
 
         console.log('Hashing password...');
         const passwordHash = await bcrypt.hash(PASSWORD, 10);
@@ -34,6 +34,7 @@ async function seed() {
         const recruiters = await User.create([
             {
                 email: 'janedoe@gmail.com',
+                username: 'janedoe',
                 passwordHash,
                 role: 'recruiter',
                 isVerified: true,
@@ -52,6 +53,7 @@ async function seed() {
             },
             {
                 email: 'johnsmith@company.com',
+                username: 'johnsmith',
                 passwordHash,
                 role: 'recruiter',
                 isVerified: true,
@@ -75,6 +77,7 @@ async function seed() {
         await User.create([
             {
                 email: 'seeker1@gmail.com',
+                username: 'alicej',
                 passwordHash,
                 role: 'seeker',
                 isVerified: true,
@@ -83,18 +86,20 @@ async function seed() {
                 coverImage: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1000',
                 profile: {
                     fullName: 'Alice Johnson',
+                    headline: 'Frontend Developer',
                     phone: '+1234567890',
                     bio: 'Passionate Frontend Developer with 3 years of experience.',
                     location: 'Austin, TX',
                     resumeUrl: 'https://example.com/resumes/alice.pdf',
                     skills: ['React', 'TypeScript', 'CSS', 'Tailwind'],
-                    experienceYear: 3,
-                    education: 'B.S. Computer Science',
+                    experience: [],
+                    education: [],
                     preferredJobTypes: ['Full-time', 'Remote']
                 }
             },
             {
                 email: 'seeker2@yahoo.com',
+                username: 'bobw',
                 passwordHash,
                 role: 'seeker',
                 isVerified: true,
@@ -103,13 +108,14 @@ async function seed() {
                 coverImage: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1000',
                 profile: {
                     fullName: 'Bob Wilson',
+                    headline: 'Backend Engineer',
                     phone: '+0987654321',
                     bio: 'Backend Engineer specializing in Node.js and Python.',
                     location: 'Seattle, WA',
                     resumeUrl: 'https://example.com/resumes/bob.pdf',
                     skills: ['Node.js', 'Express', 'MongoDB', 'Python'],
-                    experienceYear: 5,
-                    education: 'M.S. Software Engineering',
+                    experience: [],
+                    education: [],
                     preferredJobTypes: ['Contract', 'Remote']
                 }
             }
