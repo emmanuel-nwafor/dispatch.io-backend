@@ -123,11 +123,83 @@ export const deleteReel = async (req: Request, res: Response, next: NextFunction
         }
 
         await reel.deleteOne();
-
+        
         res.status(200).json({
             success: true,
-            message: 'Post deleted successfully'
+            message: 'Reel deleted successfully'
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const likeReel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'User not authenticated' });
+            return;
+        }
+
+        const reel = await Reel.findById(id);
+        if (!reel) {
+            res.status(404).json({ success: false, message: 'Reel not found' });
+            return;
+        }
+
+        const likeIndex = reel.likes.indexOf(userId as any);
+        if (likeIndex === -1) {
+            reel.likes.push(userId as any);
+        } else {
+            reel.likes.splice(likeIndex, 1);
+        }
+
+        await reel.save();
+        res.status(200).json({ success: true, data: reel });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const commentOnReel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { text } = req.body;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'User not authenticated' });
+            return;
+        }
+
+        if (!text) {
+            res.status(400).json({ success: false, message: 'Comment text is required' });
+            return;
+        }
+
+        const reel = await Reel.findById(id);
+        if (!reel) {
+            res.status(404).json({ success: false, message: 'Reel not found' });
+            return;
+        }
+
+        reel.comments.push({
+            userId: userId as any,
+            text,
+            createdAt: new Date()
+        });
+
+        await reel.save();
+        
+        // Populate the new comment's user info before returning
+        const updatedReel = await Reel.findById(id)
+            .populate('comments.userId', 'profile.fullName avatar username');
+
+        res.status(200).json({ success: true, data: updatedReel });
     } catch (error) {
         next(error);
     }

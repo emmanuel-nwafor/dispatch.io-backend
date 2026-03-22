@@ -11,6 +11,11 @@ export interface IReel extends Document {
     description: string;
     tags: string[];
     likes: Types.ObjectId[];
+    comments: {
+        userId: Types.ObjectId;
+        text: string;
+        createdAt: Date;
+    }[];
     views: number;
     createdAt: Date;
     updatedAt: Date;
@@ -31,6 +36,11 @@ const reelSchema = new Schema<IReel>({
     description: { type: String },
     tags: { type: [String], default: [] },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    comments: [{
+        userId: { type: Schema.Types.ObjectId, ref: 'User' },
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now }
+    }],
     views: { type: Number, default: 0 }
 }, {
     timestamps: true
