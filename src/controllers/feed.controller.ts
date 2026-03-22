@@ -5,19 +5,21 @@ import { Job } from '../models/Jobs.js';
 import { Reel } from '../models/Reels.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 
-export const getFeed = async (req: Request, res: Response, next: NextFunction) => {
+export const getFeed = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const authReq = req as AuthRequest;
         const userId = authReq.user?.id;
 
         if (!userId) {
-            return res.status(401).json({ message: 'User not authenticated' });
+            res.status(401).json({ message: 'User not authenticated' });
+            return;
         }
 
         const user = await User.findById(userId);
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            res.status(404).json({ message: 'User not found' });
+            return;
         }
 
         const { role } = user;
@@ -96,25 +98,30 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction) =
             feedItems = shuffleArray([...formattedSeekers, ...formattedReels, ...formattedPosts]);
         }
 
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
             page,
             limit,
             count: feedItems.length,
             data: feedItems
         });
+        return;
 
     } catch (error: any) {
         console.error('Error fetching feed:', error);
-        return res.status(500).json({ message: 'Server error while fetching feed', error: error.message });
+        res.status(500).json({ message: 'Server error while fetching feed', error: error.message });
+        return;
     }
 };
 
-export const getReels = async (req: Request, res: Response, next: NextFunction) => {
+export const getReels = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const authReq = req as AuthRequest;
         const userId = authReq.user?.id;
-        if (!userId) return res.status(401).json({ message: 'User not authenticated' });
+        if (!userId) {
+            res.status(401).json({ message: 'User not authenticated' });
+            return;
+        }
 
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
@@ -151,13 +158,15 @@ export const getReels = async (req: Request, res: Response, next: NextFunction) 
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         ).slice(0, limit);
 
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
             page,
             data: combined
         });
+        return;
     } catch (error: any) {
         next(error);
+        return;
     }
 };
 
@@ -169,7 +178,7 @@ function shuffleArray(array: any[]) {
     return array;
 }
 
-export const getFeedItemById = async (req: Request, res: Response, next: NextFunction) => {
+export const getFeedItemById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
         const { type } = req.query;
@@ -211,12 +220,15 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
         }
 
         if (!item) {
-            return res.status(404).json({ message: 'Feed item not found' });
+            res.status(404).json({ message: 'Feed item not found' });
+            return;
         }
 
-        return res.status(200).json({ success: true, data: item });
+        res.status(200).json({ success: true, data: item });
+        return;
     } catch (error: any) {
         console.error('Error fetching feed item:', error);
-        return res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Server error', error: error.message });
+        return;
     }
 };
