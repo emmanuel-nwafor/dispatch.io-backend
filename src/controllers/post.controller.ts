@@ -17,11 +17,11 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
 
         const content = req.body.content as string | undefined;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
-        
+
         const imageFiles = files?.images || [];
         const videoFile = files?.video?.[0];
 
-        // 1. Upload Images to Cloudinary
+        // Upload Images to Cloudinary
         const images = await Promise.all(
             imageFiles.map(async (file) => {
                 return new Promise<string>((resolve, reject) => {
@@ -37,7 +37,7 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
             })
         );
 
-        // 2. Upload Video to Mux if present
+        // Upload Video to Mux if present
         let videoUrl: string | undefined;
         let muxAssetId: string | undefined;
         let muxPlaybackId: string | undefined;
@@ -50,14 +50,14 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
             // For now, to solve the "File size too large" on Cloudinary, 
             // we'll try to use a Mux direct upload process if possible, 
             // but that's complex from the backend with memory buffers.
-            
+
             // BETTER APPROACH: The user said Cloudinary has a 10MB limit. 
             // If the video is LARGE, we definitely need Mux.
-            
+
             // To keep it simple but functional for now:
             // Let's create a Mux direct upload and PUSH the buffer to it.
             const muxUpload = await MuxService.createDirectUpload();
-            
+
             // Push the buffer to Mux
             const response = await fetch(muxUpload.url, {
                 method: 'PUT',
@@ -68,7 +68,7 @@ export const createPost = async (req: Request, res: Response, next: NextFunction
             if (!response.ok) throw new Error('Failed to push video to Mux');
 
             muxAssetId = muxUpload.asset_id!;
-            
+
             // Poll Mux for playback ID (optional but helpful for immediate UI)
             try {
                 let asset = await MuxService.getAssetByUploadId(muxUpload.id);

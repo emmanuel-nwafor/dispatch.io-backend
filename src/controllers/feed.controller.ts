@@ -38,6 +38,7 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction) =
 
             let jobs = await Job.find(query)
                 .populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar')
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
@@ -45,6 +46,7 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction) =
             // Find reels (company_tour, job_preview)
             const reels = await Reel.find({ type: { $in: ['company_tour', 'job_preview'] } })
                 .populate('creatorId', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar')
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
@@ -52,6 +54,7 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction) =
             // Find posts
             const posts = await Post.find()
                 .populate('creatorId', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar')
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
@@ -67,18 +70,21 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction) =
             // Recruiter Feed
             const seekers = await User.find({ role: 'seeker', isProfileCompleted: true })
                 .select('-passwordHash -otpHash')
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
 
             const reels = await Reel.find({ type: 'seeker_pitch' })
                 .populate('creatorId', 'profile.fullName recruiterProfile.companyName profile.resumeUrl avatar')
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
 
             const posts = await Post.find()
                 .populate('creatorId', 'profile.fullName recruiterProfile.companyName profile.location avatar')
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)
                 .lean();
