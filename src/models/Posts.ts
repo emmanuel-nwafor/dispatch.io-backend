@@ -14,6 +14,8 @@ export interface IPost extends Document {
         text: string;
         createdAt: Date;
     }[];
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const postSchema = new Schema<IPost>({

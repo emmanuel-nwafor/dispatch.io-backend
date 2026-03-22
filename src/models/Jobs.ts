@@ -16,6 +16,8 @@ export interface IJob extends Document {
     experienceLevel: 'Entry' | 'Mid' | 'Senior' | 'Lead';
     applicantsCount: number;
     status: 'open' | 'closed';
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const jobSchema = new Schema<IJob>({

@@ -110,6 +110,57 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction) =
     }
 };
 
+export const getReels = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+        if (!userId) return res.status(401).json({ message: 'User not authenticated' });
+
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+
+        // 1. Fetch Native Reels
+        const nativeReels = await Reel.find()
+            .populate('creatorId', 'profile.fullName recruiterProfile.companyName avatar')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        // 2. Fetch Posts with videos
+        const videoPosts = await Post.find({ videoUrl: { $ne: null } })
+            .populate('creatorId', 'profile.fullName recruiterProfile.companyName avatar')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        // Format and merge
+        const formattedNative = nativeReels.map(r => ({ ...r, feedType: 'reel' }));
+        const formattedPosts = videoPosts.map(p => ({ 
+            ...p, 
+            feedType: 'post',
+            // Map post fields to reel fields if necessary for UI consistency
+            title: p.content.substring(0, 50),
+            description: p.content
+        }));
+
+        // Mix and return (we can improve the mixing logic for personalization later)
+        const combined = [...formattedNative, ...formattedPosts].sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ).slice(0, limit);
+
+        return res.status(200).json({
+            success: true,
+            page,
+            data: combined
+        });
+    } catch (error: any) {
+        next(error);
+    }
+};
+
 function shuffleArray(array: any[]) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -130,7 +181,13 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
             if (item) item.feedType = 'job';
         } else if (type === 'reel') {
             item = await Reel.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
-            if (item) item.feedType = 'reel';
+            if (item) {
+                item.feedType = 'reel';
+            } else {
+                // Fallback: check if it's a post with video (often redirected to reels)
+                item = await Post.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+                if (item) item.feedType = 'post';
+            }
         } else if (type === 'post') {
             item = await Post.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
             if (item) item.feedType = 'post';
@@ -138,6 +195,7 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
             item = await User.findById(id).select('-passwordHash -otpHash').lean();
             if (item) item.feedType = 'candidate';
         } else {
+            // General find logic (already reasonably robust)
             item = await Job.findById(id).populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar').lean();
             if (item) {
                 item.feedType = 'job';

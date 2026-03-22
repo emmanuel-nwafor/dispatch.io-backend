@@ -12,6 +12,8 @@ export interface IReel extends Document {
     tags: string[];
     likes: Types.ObjectId[];
     views: number;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const reelSchema = new Schema<IReel>({

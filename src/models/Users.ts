@@ -58,6 +58,8 @@ export interface IUser extends Document {
         accountabilityScore: number;
         verifiedCompany: boolean;
     } | undefined;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const userSchema = new Schema<IUser>({
