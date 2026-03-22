@@ -60,6 +60,8 @@ export interface IUser extends Document {
         accountabilityScore: number;
         verifiedCompany: boolean;
     } | undefined;
+    followers: string[];
+    following: string[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -107,7 +109,9 @@ const userSchema = new Schema<IUser>({
         about: { type: String, default: '' },
         accountabilityScore: { type: Number, default: 100 },
         verifiedCompany: { type: Boolean, default: false }
-    }
+    },
+    followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    following: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 }, {
     timestamps: true,
     toJSON: {

@@ -297,3 +297,119 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
         next(error);
     }
 };
+
+export const followUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+        const { id: targetId } = req.params;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Not authorized' });
+            return;
+        }
+
+        if (!targetId || typeof targetId !== 'string') {
+            res.status(400).json({ success: false, message: 'Invalid User ID provided.' });
+            return;
+        }
+
+        if (userId === targetId) {
+            res.status(400).json({ success: false, message: 'You cannot follow yourself' });
+            return;
+        }
+
+        const [user, targetUser] = await Promise.all([
+            User.findById(userId),
+            User.findById(targetId)
+        ]);
+
+        if (!user || !targetUser) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        if (user.following.includes(targetId)) {
+            res.status(400).json({ success: false, message: 'Already following this user' });
+            return;
+        }
+
+        user.following.push(targetId);
+        targetUser.followers.push(userId);
+
+        await Promise.all([user.save(), targetUser.save()]);
+
+        res.status(200).json({ success: true, message: 'Followed successfully' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const unfollowUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+        const { id: targetId } = req.params;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Not authorized' });
+            return;
+        }
+
+        if (!targetId || typeof targetId !== 'string') {
+            res.status(400).json({ success: false, message: 'Invalid User ID provided.' });
+            return;
+        }
+
+        const [user, targetUser] = await Promise.all([
+            User.findById(userId),
+            User.findById(targetId)
+        ]);
+
+        if (!user || !targetUser) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        user.following = user.following.filter(id => id.toString() !== targetId);
+        targetUser.followers = targetUser.followers.filter(id => id.toString() !== userId);
+
+        await Promise.all([user.save(), targetUser.save()]);
+
+        res.status(200).json({ success: true, message: 'Unfollowed successfully' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getFollowers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id).populate('followers', 'username avatar profile recruiterProfile');
+        
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        res.status(200).json({ success: true, followers: user.followers });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getFollowing = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id).populate('following', 'username avatar profile recruiterProfile');
+        
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        res.status(200).json({ success: true, following: user.following });
+    } catch (error) {
+        next(error);
+    }
+};
