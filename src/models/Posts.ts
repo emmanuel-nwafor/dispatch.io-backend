@@ -23,7 +23,7 @@ export interface IPost extends Document {
 
 const postSchema = new Schema<IPost>({
     creatorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    content: { type: String, required: true },
+    content: { type: String, default: '' },
     images: { type: [String], default: [] },
     videoUrl: { type: String },
     thumbnailUrl: { type: String },

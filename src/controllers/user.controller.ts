@@ -95,6 +95,7 @@ export const completeProfile = async (req: Request, res: Response, next: NextFun
                 industry: industry || '',
                 companySize: companySize || '',
                 location: companyLocation || location || '',
+                about: bio || '',
                 accountabilityScore: 100,
                 verifiedCompany: false
             };
@@ -246,7 +247,15 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
             user.profile = { ...user.profile, ...req.body };
             user.markModified('profile');
         } else if (user.role === 'recruiter' && user.recruiterProfile) {
-            user.recruiterProfile = { ...user.recruiterProfile, ...req.body };
+            // Map generic fields to recruiter fields if they exist in req.body
+            const recruiterData = { ...user.recruiterProfile };
+            if (req.body.fullName) recruiterData.companyName = req.body.fullName;
+            if (req.body.headline) recruiterData.industry = req.body.headline;
+            if (req.body.bio) recruiterData.about = req.body.bio;
+            if (req.body.location) recruiterData.location = req.body.location;
+            
+            // Also include any other fields in req.body
+            user.recruiterProfile = { ...recruiterData, ...req.body };
             user.markModified('recruiterProfile');
         }
 

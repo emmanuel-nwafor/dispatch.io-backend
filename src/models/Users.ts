@@ -56,6 +56,7 @@ export interface IUser extends Document {
         industry: string;
         companySize: string;
         location: string;
+        about?: string;
         accountabilityScore: number;
         verifiedCompany: boolean;
     } | undefined;
@@ -103,6 +104,7 @@ const userSchema = new Schema<IUser>({
         industry: { type: String, default: '' },
         companySize: { type: String, default: '' },
         location: { type: String, default: '' },
+        about: { type: String, default: '' },
         accountabilityScore: { type: Number, default: 100 },
         verifiedCompany: { type: Boolean, default: false }
     }
