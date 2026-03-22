@@ -6,6 +6,8 @@ export interface IPost extends Document {
     images: string[];
     videoUrl?: string | undefined;
     thumbnailUrl?: string | undefined;
+    muxAssetId?: string | undefined;
+    muxPlaybackId?: string | undefined;
     likes: Types.ObjectId[];
     comments: {
         userId: Types.ObjectId;
@@ -20,6 +22,8 @@ const postSchema = new Schema<IPost>({
     images: { type: [String], default: [] },
     videoUrl: { type: String },
     thumbnailUrl: { type: String },
+    muxAssetId: { type: String },
+    muxPlaybackId: { type: String },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     comments: [{
         userId: { type: Schema.Types.ObjectId, ref: 'User' },

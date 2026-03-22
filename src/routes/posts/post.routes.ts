@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { protect } from '../../middleware/auth.middleware.js';
-import { upload } from '../../config/cloudinary.config.js';
+import { upload } from '../../config/multer.config.js';
 import { createPost, deletePost, getPosts } from '../../controllers/post.controller.js';
 
 const router = Router();
