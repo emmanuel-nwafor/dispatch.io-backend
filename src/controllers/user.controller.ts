@@ -430,3 +430,36 @@ export const getFollowing = async (req: Request, res: Response, next: NextFuncti
         next(error);
     }
 };
+
+export const getSuggestions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        if (!userId) {
+            res.status(401).json({ success: false, message: 'Not authorized' });
+            return;
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        // Suggest users that are not the current user and not already followed
+        const suggestions = await User.find({
+            _id: { $ne: userId, $nin: user.following },
+            isProfileCompleted: true
+        })
+        .select('username avatar profile recruiterProfile role')
+        .limit(10);
+
+        res.status(200).json({
+            success: true,
+            data: suggestions
+        });
+    } catch (error) {
+        next(error);
+    }
+};
