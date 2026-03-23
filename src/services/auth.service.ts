@@ -26,6 +26,8 @@ export class AuthService {
             coverPhoto: user.coverImage || '',
             profile: user.profile,
             recruiterProfile: user.recruiterProfile,
+            followers: user.followers || [],
+            following: user.following || [],
             details: user.role === 'seeker' ? user.profile : user.recruiterProfile
         };
     }

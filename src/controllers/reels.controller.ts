@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { Reel } from '../models/Reels.js';
+import { Post } from '../models/Posts.js';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 
 import { MuxService } from '../services/mux.service.js';
@@ -144,9 +145,24 @@ export const likeReel = async (req: Request, res: Response, next: NextFunction):
             return;
         }
 
-        const reel = await Reel.findById(id);
+        let reel = await Reel.findById(id);
         if (!reel) {
-            res.status(404).json({ success: false, message: 'Reel not found' });
+            // Check if it's a post with video
+            const post = await Post.findById(id);
+            if (!post) {
+                res.status(404).json({ success: false, message: 'Reel not found' });
+                return;
+            }
+            
+            const likeIndex = post.likes.indexOf(userId as any);
+            if (likeIndex === -1) {
+                post.likes.push(userId as any);
+            } else {
+                post.likes.splice(likeIndex, 1);
+            }
+            
+            await post.save();
+            res.status(200).json({ success: true, data: post });
             return;
         }
 
@@ -181,9 +197,24 @@ export const commentOnReel = async (req: Request, res: Response, next: NextFunct
             return;
         }
 
-        const reel = await Reel.findById(id);
+        let reel = await Reel.findById(id);
         if (!reel) {
-            res.status(404).json({ success: false, message: 'Reel not found' });
+            // Check if it's a post
+            const post = await Post.findById(id);
+            if (!post) {
+                res.status(404).json({ success: false, message: 'Reel not found' });
+                return;
+            }
+
+            post.comments.push({
+                userId: userId as any,
+                text,
+                createdAt: new Date()
+            });
+
+            await post.save();
+            const updatedPost = await Post.findById(id).populate('comments.userId', 'profile.fullName avatar username');
+            res.status(200).json({ success: true, data: updatedPost });
             return;
         }
 

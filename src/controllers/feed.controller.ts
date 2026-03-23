@@ -56,6 +56,10 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction): 
             // Find posts
             const posts = await Post.find()
                 .populate('creatorId', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar')
+                .populate({
+                    path: 'parentPostId',
+                    populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' }
+                })
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)
@@ -86,6 +90,10 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction): 
 
             const posts = await Post.find()
                 .populate('creatorId', 'profile.fullName recruiterProfile.companyName profile.location avatar')
+                .populate({
+                    path: 'parentPostId',
+                    populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' }
+                })
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)

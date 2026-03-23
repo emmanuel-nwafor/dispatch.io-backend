@@ -329,7 +329,7 @@ export const followUser = async (req: Request, res: Response, next: NextFunction
             return;
         }
 
-        if (user.following.includes(targetId)) {
+        if (user.following.some(id => id.toString() === targetId)) {
             res.status(400).json({ success: false, message: 'Already following this user' });
             return;
         }
