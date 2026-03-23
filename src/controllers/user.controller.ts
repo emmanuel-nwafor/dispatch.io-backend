@@ -242,20 +242,37 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
         if (req.body.avatar) user.avatar = req.body.avatar;
         if (req.body.coverImage) user.coverImage = req.body.coverImage;
 
-        // Update role-specific profile
+        // Update role-specific profile using explicit field whitelists only
         if (user.role === 'seeker' && user.profile) {
-            user.profile = { ...user.profile, ...req.body };
+            const b = req.body;
+            if (b.fullName !== undefined) user.profile.fullName = b.fullName;
+            if (b.headline !== undefined) user.profile.headline = b.headline;
+            if (b.bio !== undefined) user.profile.bio = b.bio;
+            if (b.phone !== undefined) user.profile.phone = b.phone;
+            if (b.location !== undefined) user.profile.location = b.location;
+            if (b.portfolioUrl !== undefined) user.profile.portfolioUrl = b.portfolioUrl;
+            if (b.linkedInUrl !== undefined) user.profile.linkedInUrl = b.linkedInUrl;
+            if (b.birthday !== undefined) user.profile.birthday = b.birthday;
+            if (b.gender !== undefined) user.profile.gender = b.gender;
+            if (b.preferredJobTypes !== undefined) user.profile.preferredJobTypes = b.preferredJobTypes;
+            if (Array.isArray(b.skills)) user.profile.skills = b.skills;
+            if (Array.isArray(b.experience)) user.profile.experience = b.experience;
+            if (Array.isArray(b.education)) user.profile.education = b.education;
+            if (Array.isArray(b.languages)) user.profile.languages = b.languages;
+            // autoApply is never touched here — managed via completeProfile/settings only
             user.markModified('profile');
+
         } else if (user.role === 'recruiter' && user.recruiterProfile) {
-            // Map generic fields to recruiter fields if they exist in req.body
-            const recruiterData = { ...user.recruiterProfile };
-            if (req.body.fullName) recruiterData.companyName = req.body.fullName;
-            if (req.body.headline) recruiterData.industry = req.body.headline;
-            if (req.body.bio) recruiterData.about = req.body.bio;
-            if (req.body.location) recruiterData.location = req.body.location;
-            
-            // Also include any other fields in req.body
-            user.recruiterProfile = { ...recruiterData, ...req.body };
+            const b = req.body;
+            if (b.companyName !== undefined) user.recruiterProfile.companyName = b.companyName;
+            if (b.fullName !== undefined) user.recruiterProfile.companyName = b.fullName;
+            if (b.industry !== undefined) user.recruiterProfile.industry = b.industry;
+            if (b.headline !== undefined) user.recruiterProfile.industry = b.headline;
+            if (b.about !== undefined) user.recruiterProfile.about = b.about;
+            if (b.bio !== undefined) user.recruiterProfile.about = b.bio;
+            if (b.location !== undefined) user.recruiterProfile.location = b.location;
+            if (b.companyWebsite !== undefined) user.recruiterProfile.companyWebsite = b.companyWebsite;
+            if (b.companySize !== undefined) user.recruiterProfile.companySize = b.companySize;
             user.markModified('recruiterProfile');
         }
 
