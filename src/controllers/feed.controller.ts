@@ -135,7 +135,7 @@ export const getReels = async (req: Request, res: Response, next: NextFunction):
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        // 1. Fetch Native Reels
+        // Fetch Native Reels
         const nativeReels = await Reel.find()
             .populate('creatorId', 'profile.fullName recruiterProfile.companyName avatar')
             .sort({ createdAt: -1 })
@@ -143,7 +143,7 @@ export const getReels = async (req: Request, res: Response, next: NextFunction):
             .limit(limit)
             .lean();
 
-        // 2. Fetch Posts with videos
+        // Fetch Posts with videos
         const videoPosts = await Post.find({ videoUrl: { $ne: null } })
             .populate('creatorId', 'profile.fullName recruiterProfile.companyName avatar')
             .sort({ createdAt: -1 })
@@ -153,8 +153,8 @@ export const getReels = async (req: Request, res: Response, next: NextFunction):
 
         // Format and merge
         const formattedNative = nativeReels.map(r => ({ ...r, feedType: 'reel' }));
-        const formattedPosts = videoPosts.map(p => ({ 
-            ...p, 
+        const formattedPosts = videoPosts.map(p => ({
+            ...p,
             feedType: 'post',
             // Map post fields to reel fields if necessary for UI consistency
             title: p.content.substring(0, 50),
@@ -162,7 +162,7 @@ export const getReels = async (req: Request, res: Response, next: NextFunction):
         }));
 
         // Mix and return (we can improve the mixing logic for personalization later)
-        const combined = [...formattedNative, ...formattedPosts].sort((a, b) => 
+        const combined = [...formattedNative, ...formattedPosts].sort((a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         ).slice(0, limit);
 
@@ -206,7 +206,10 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
                 if (item) item.feedType = 'post';
             }
         } else if (type === 'post') {
-            item = await Post.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+            item = await Post.findById(id)
+                .populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar')
+                .populate({ path: 'parentPostId', populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' } })
+                .lean();
             if (item) item.feedType = 'post';
         } else if (type === 'candidate') {
             item = await User.findById(id).select('-passwordHash -otpHash').lean();
@@ -221,7 +224,10 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
                 if (item) {
                     item.feedType = 'reel';
                 } else {
-                    item = await Post.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+                    item = await Post.findById(id)
+                        .populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar')
+                        .populate({ path: 'parentPostId', populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' } })
+                        .lean();
                     if (item) item.feedType = 'post';
                 }
             }
