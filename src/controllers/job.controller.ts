@@ -41,11 +41,32 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
             location,
             jobType,
             experienceLevel,
+            recruiter,
+            status,
             page = 1,
             limit = 10
         } = req.query;
 
-        const query: any = { status: 'open' };
+        const authReq = req as AuthRequest;
+        
+        // Default to 'open' status if not specified, unless recruiter is 'me' where they might want all statuses. 
+        // We will default to 'open' if they don't explicitly ask for something else, but if they are viewing their dashboard they might want everything.
+        // Let's just use what they pass, or default to open.
+        const query: any = { status: status || 'open' };
+
+        if (recruiter === 'me') {
+            const recruiterId = authReq.user?.id;
+            if (!recruiterId) {
+                res.status(401).json({ success: false, message: 'Unauthorized. Recruiter ID missing.' });
+                return;
+            }
+            query.recruiter = recruiterId;
+            
+            // If fetching "my jobs", show all statuses by default unless explicitly asking for open/closed
+            if (!status) {
+                delete query.status; 
+            }
+        }
 
         if (search) {
             query.$or = [
