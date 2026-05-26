@@ -60,6 +60,10 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction): 
                     path: 'parentPostId',
                     populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' }
                 })
+                .populate({
+                    path: 'comments.userId',
+                    select: 'role avatar profile.fullName recruiterProfile.companyName username'
+                })
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limitPerType)
@@ -93,6 +97,10 @@ export const getFeed = async (req: Request, res: Response, next: NextFunction): 
                 .populate({
                     path: 'parentPostId',
                     populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' }
+                })
+                .populate({
+                    path: 'comments.userId',
+                    select: 'role avatar profile.fullName recruiterProfile.companyName username'
                 })
                 .sort({ createdAt: -1 })
                 .skip(skip)
@@ -138,6 +146,10 @@ export const getReels = async (req: Request, res: Response, next: NextFunction):
         // Fetch Native Reels
         const nativeReels = await Reel.find()
             .populate('creatorId', 'profile.fullName recruiterProfile.companyName avatar')
+            .populate({
+                path: 'comments.userId',
+                select: 'role avatar profile.fullName recruiterProfile.companyName username'
+            })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
@@ -146,6 +158,10 @@ export const getReels = async (req: Request, res: Response, next: NextFunction):
         // Fetch Posts with videos
         const videoPosts = await Post.find({ videoUrl: { $ne: null } })
             .populate('creatorId', 'profile.fullName recruiterProfile.companyName avatar')
+            .populate({
+                path: 'comments.userId',
+                select: 'role avatar profile.fullName recruiterProfile.companyName username'
+            })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
@@ -197,18 +213,25 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
             item = await Job.findById(id).populate('recruiter', 'recruiterProfile.companyName recruiterProfile.location profile.fullName avatar').lean();
             if (item) item.feedType = 'job';
         } else if (type === 'reel') {
-            item = await Reel.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+            item = await Reel.findById(id)
+                .populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar')
+                .populate({ path: 'comments.userId', select: 'role avatar profile.fullName recruiterProfile.companyName username' })
+                .lean();
             if (item) {
                 item.feedType = 'reel';
             } else {
                 // Fallback: check if it's a post with video (often redirected to reels)
-                item = await Post.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+                item = await Post.findById(id)
+                    .populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar')
+                    .populate({ path: 'comments.userId', select: 'role avatar profile.fullName recruiterProfile.companyName username' })
+                    .lean();
                 if (item) item.feedType = 'post';
             }
         } else if (type === 'post') {
             item = await Post.findById(id)
                 .populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar')
                 .populate({ path: 'parentPostId', populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' } })
+                .populate({ path: 'comments.userId', select: 'role avatar profile.fullName recruiterProfile.companyName username' })
                 .lean();
             if (item) item.feedType = 'post';
         } else if (type === 'candidate') {
@@ -220,13 +243,17 @@ export const getFeedItemById = async (req: Request, res: Response, next: NextFun
             if (item) {
                 item.feedType = 'job';
             } else {
-                item = await Reel.findById(id).populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar').lean();
+                item = await Reel.findById(id)
+                    .populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar')
+                    .populate({ path: 'comments.userId', select: 'role avatar profile.fullName recruiterProfile.companyName username' })
+                    .lean();
                 if (item) {
                     item.feedType = 'reel';
                 } else {
                     item = await Post.findById(id)
                         .populate('creatorId', 'recruiterProfile.companyName profile.fullName avatar')
                         .populate({ path: 'parentPostId', populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' } })
+                        .populate({ path: 'comments.userId', select: 'role avatar profile.fullName recruiterProfile.companyName username' })
                         .lean();
                     if (item) item.feedType = 'post';
                 }

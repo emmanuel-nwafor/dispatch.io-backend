@@ -1,19 +1,20 @@
 import nodemailer from 'nodemailer';
 
 const getTransporter = () => {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    const host = process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com';
+    const port = Number(process.env.BREVO_SMTP_PORT) || 587;
+    const user = process.env.BREVO_SMTP_USER || process.env.EMAIL_USER;
+    const pass = process.env.BREVO_SMTP_PASS || process.env.EMAIL_PASS;
+
+    if (!user || !pass) {
         throw new Error("Email credentials are missing in process.env");
     }
 
-    // Force IPv4 for Render compatibility
     return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
+        host,
+        port,
+        secure: port === 465,
+        auth: { user, pass },
         family: 4,
         connectionTimeout: 15000,
         greetingTimeout: 15000,

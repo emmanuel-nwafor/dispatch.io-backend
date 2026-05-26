@@ -105,7 +105,7 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     const otpRecord = await Otp.findOne({ email });
     if (!otpRecord) {
@@ -119,7 +119,8 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     const newUser = await User.create({
       email: otpRecord.email,
       passwordHash,
-      isVerified: true
+      isVerified: true,
+      role: role || 'seeker'
     });
 
     await Otp.deleteOne({ email: otpRecord.email });

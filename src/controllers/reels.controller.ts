@@ -89,6 +89,10 @@ export const getReels = async (req: Request, res: Response, next: NextFunction):
 
         const reels = await Reel.find(query)
             .populate('creatorId', 'role avatar coverImage profile.fullName recruiterProfile.companyName profile.resumeUrl')
+            .populate({
+                path: 'comments.userId',
+                select: 'role avatar profile.fullName recruiterProfile.companyName username'
+            })
             .sort({ createdAt: -1 });
 
         res.status(200).json({
@@ -213,7 +217,7 @@ export const commentOnReel = async (req: Request, res: Response, next: NextFunct
             });
 
             await post.save();
-            const updatedPost = await Post.findById(id).populate('comments.userId', 'profile.fullName avatar username');
+            const updatedPost = await Post.findById(id).populate('comments.userId', 'role avatar profile.fullName recruiterProfile.companyName username');
             res.status(200).json({ success: true, data: updatedPost });
             return;
         }
@@ -228,7 +232,7 @@ export const commentOnReel = async (req: Request, res: Response, next: NextFunct
         
         // Populate the new comment's user info before returning
         const updatedReel = await Reel.findById(id)
-            .populate('comments.userId', 'profile.fullName avatar username');
+            .populate('comments.userId', 'role avatar profile.fullName recruiterProfile.companyName username');
 
         res.status(200).json({ success: true, data: updatedReel });
     } catch (error) {

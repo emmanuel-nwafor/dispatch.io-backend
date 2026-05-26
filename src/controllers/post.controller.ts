@@ -131,6 +131,10 @@ export const getPosts = async (req: Request, res: Response, next: NextFunction):
                 path: 'parentPostId',
                 populate: { path: 'creatorId', select: 'profile.fullName avatar recruiterProfile.companyName' }
             })
+            .populate({
+                path: 'comments.userId',
+                select: 'role avatar profile.fullName recruiterProfile.companyName username'
+            })
             .sort({ createdAt: -1 });
 
         res.status(200).json({
@@ -247,11 +251,17 @@ export const addComment = async (req: Request, res: Response, next: NextFunction
         await parseMentions(text, post);
 
         await post.save();
+        await post.populate({
+            path: 'comments.userId',
+            select: 'role avatar profile.fullName recruiterProfile.companyName username'
+        });
+
+        const addedComment = post.comments[post.comments.length - 1];
 
         res.status(201).json({
             success: true,
             message: 'Comment added successfully',
-            comment
+            comment: addedComment
         });
         return;
     } catch (error) {

@@ -102,7 +102,7 @@ export const getJobApplications = async (req: Request, res: Response, next: Next
         }
 
         const applications = await Application.find({ jobId: jobId as any })
-            .populate('seekerId', 'email profile')
+            .populate('seekerId', 'email profile avatar')
             .sort({ createdAt: -1 });
 
         res.status(200).json({
