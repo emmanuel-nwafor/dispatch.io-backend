@@ -463,3 +463,74 @@ export const getSuggestions = async (req: Request, res: Response, next: NextFunc
         next(error);
     }
 };
+
+export const saveJob = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+        const { id: jobId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        if (!user.savedJobs) {
+            user.savedJobs = [];
+        }
+
+        if (!user.savedJobs.includes(jobId as any)) {
+            user.savedJobs.push(jobId as any);
+            await user.save();
+        }
+
+        res.status(200).json({ success: true, message: 'Job saved successfully', savedJobs: user.savedJobs });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const unsaveJob = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+        const { id: jobId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        if (user.savedJobs) {
+            user.savedJobs = user.savedJobs.filter(id => id.toString() !== jobId);
+            await user.save();
+        }
+
+        res.status(200).json({ success: true, message: 'Job removed from saved list', savedJobs: user.savedJobs });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getSavedJobs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        const user = await User.findById(userId).populate({
+            path: 'savedJobs',
+            populate: { path: 'recruiter', select: 'email avatar coverImage profile recruiterProfile' }
+        });
+
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        res.status(200).json({ success: true, count: user.savedJobs?.length || 0, jobs: user.savedJobs || [] });
+    } catch (error) {
+        next(error);
+    }
+};

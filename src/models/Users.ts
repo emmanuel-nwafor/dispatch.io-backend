@@ -62,6 +62,7 @@ export interface IUser extends Document {
     } | undefined;
     followers: string[];
     following: string[];
+    savedJobs: string[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -111,7 +112,8 @@ const userSchema = new Schema<IUser>({
         verifiedCompany: { type: Boolean, default: false }
     },
     followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    following: [{ type: Schema.Types.ObjectId, ref: 'User' }]
+    following: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    savedJobs: [{ type: Schema.Types.ObjectId, ref: 'Job' }]
 }, {
     timestamps: true,
     toJSON: {

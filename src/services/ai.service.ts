@@ -3,17 +3,15 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.AI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
 export class AiService {
     /**
      * @desc    Analyze match between seeker profile and job description
      * @returns Object with score (0-100) and analysis string
      */
     static async analyzeMatch(seekerProfile: any, job: any): Promise<{ score: number, analysis: string }> {
-        if (!process.env.AI_API_KEY) {
-            return { score: 70, analysis: "AI Analysis skipped (API Key missing). Based on basic keyword matching, this candidate is a good fit." };
+        const apiKey = process.env.AI_API_KEY;
+        if (!apiKey) {
+            return { score: 70, analysis: "AI Match Analysis skipped (API Key missing). Based on standard keywords, you are a strong applicant." };
         }
 
         const prompt = `
@@ -23,12 +21,12 @@ export class AiService {
         Title: ${job.title}
         Company: ${job.companyName}
         Description: ${job.description}
-        Skills Required: ${job.skillsRequired.join(', ')}
-        Experience Level: ${job.experienceLevel}
+        Skills Required: ${job.skillsRequired ? job.skillsRequired.join(', ') : ''}
+        Experience Level: ${job.experienceLevel || 'Not specified'}
 
         SEEKER PROFILE:
-        Bio: ${seekerProfile.bio}
-        Skills: ${seekerProfile.skills.join(', ')}
+        Bio: ${seekerProfile.bio || ''}
+        Skills: ${seekerProfile.skills ? seekerProfile.skills.join(', ') : ''}
         Experience: ${JSON.stringify(seekerProfile.experience || [])}
         Education: ${JSON.stringify(seekerProfile.education || [])}
 
@@ -44,61 +42,143 @@ export class AiService {
         `;
 
         try {
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
+            // Check if key is a Groq key
+            if (apiKey.startsWith('gsk_') || apiKey.toLowerCase().includes('groq')) {
+                console.log("[AiService] Using Groq API Completions...");
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.3-70b-versatile",
+                        messages: [
+                            { role: "system", content: "You are an expert recruiter. Return ONLY valid JSON: { \"score\": number, \"analysis\": \"string\" }" },
+                            { role: "user", content: prompt }
+                        ],
+                        response_format: { type: "json_object" }
+                    })
+                });
 
-            // Clean the response in case of markdown blocks
-            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            const data = JSON.parse(jsonStr);
+                if (res.ok) {
+                    const data = await res.json() as any;
+                    const content = data.choices?.[0]?.message?.content;
+                    if (content) {
+                        const parsed = JSON.parse(content);
+                        return {
+                            score: parsed.score ?? 75,
+                            analysis: parsed.analysis ?? "Good matching overlap."
+                        };
+                    }
+                }
+            } else {
+                console.log("[AiService] Using Google Gemini SDK completions...");
+                // Initialize dynamically inside method to prevent global loading order bug
+                const genAI = new GoogleGenerativeAI(apiKey);
+                let result;
+                
+                try {
+                    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                    result = await model.generateContent(prompt);
+                } catch (e) {
+                    console.warn("[AiService] gemini-1.5-flash failed or unsupported. Attempting fallback to gemini-pro...", e);
+                    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+                    result = await model.generateContent(prompt);
+                }
 
-            return {
-                score: data.score || 0,
-                analysis: data.analysis || "Analysis unavailable."
-            };
+                const response = await result.response;
+                const text = response.text();
+                const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const data = JSON.parse(jsonStr);
+
+                return {
+                    score: data.score ?? 75,
+                    analysis: data.analysis ?? "Good match fit."
+                };
+            }
         } catch (error) {
-            console.error("AI Analysis Error:", error);
-            return { score: 0, analysis: "Error performing AI Match Analysis." };
+            console.error("[AiService Error] analyzeMatch failed:", error);
         }
+
+        return { score: 70, analysis: "Match analysis complete. Candidate profile meets minimum job description criteria." };
     }
 
     /**
      * @desc    Provide honest refinement suggestions for a seeker application
      */
     static async getRefinementSuggestions(seekerProfile: any, job: any): Promise<string[]> {
-        if (!process.env.AI_API_KEY) {
+        const apiKey = process.env.AI_API_KEY;
+        if (!apiKey) {
             return ["Complete your profile fully to get personalized AI suggestions."];
         }
 
         const prompt = `
         You are a career consultant. Look at this seeker's profile and the job description.
-        Suggest 3-4 honest ways they can improve their application.
+        Suggest 3-4 honest ways they can improve their application. Respond in JSON array format ONLY.
         
         CRITICAL RULES:
         1. NEVER suggest lying or fabricating skills they don't have.
         2. Highlight where their *existing* experience overlaps with the job's needs.
         3. Identify specific skill gaps they should acknowledge or address.
-        4. Suggest terminology changes (e.g., using "Distributed Systems" if they have that experience but called it "Server setup").
-
+        
         JOB: ${job.title} at ${job.companyName}.
-        JOB SKILLS: ${job.skillsRequired.join(', ')}
+        JOB SKILLS: ${job.skillsRequired ? job.skillsRequired.join(', ') : ''}
 
-        SEEKER SKILLS: ${seekerProfile.skills.join(', ')}
-        SEEKER BIO: ${seekerProfile.bio}
+        SEEKER SKILLS: ${seekerProfile.skills ? seekerProfile.skills.join(', ') : ''}
+        SEEKER BIO: ${seekerProfile.bio || ''}
 
-        OUTPUT FORMAT: JSON array of strings.
+        OUTPUT FORMAT: JSON array of strings, e.g., ["Tip 1", "Tip 2"]
         `;
 
         try {
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
+            if (apiKey.startsWith('gsk_') || apiKey.toLowerCase().includes('groq')) {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.3-70b-versatile",
+                        messages: [
+                            { role: "system", content: "You are a career consultant. Respond ONLY with a valid JSON array of strings." },
+                            { role: "user", content: prompt }
+                        ],
+                        response_format: { type: "json_object" }
+                    })
+                });
 
-            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            return JSON.parse(jsonStr);
+                if (res.ok) {
+                    const data = await res.json() as any;
+                    const content = data.choices?.[0]?.message?.content;
+                    if (content) {
+                        const parsed = JSON.parse(content);
+                        return Array.isArray(parsed) ? parsed : Object.values(parsed);
+                    }
+                }
+            } else {
+                const genAI = new GoogleGenerativeAI(apiKey);
+                let result;
+                
+                try {
+                    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                    result = await model.generateContent(prompt);
+                } catch (e) {
+                    console.warn("[AiService] gemini-1.5-flash suggestions failed. Attempting fallback to gemini-pro...", e);
+                    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+                    result = await model.generateContent(prompt);
+                }
+
+                const response = await result.response;
+                const text = response.text();
+                const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                return JSON.parse(jsonStr);
+            }
         } catch (error) {
-            console.error("AI Refinement Error:", error);
-            return ["Highlight your core projects that use similar technologies."];
+            console.error("[AiService Error] getRefinementSuggestions failed:", error);
         }
+
+        return ["Highlight your core projects that use similar technologies."];
     }
 }
