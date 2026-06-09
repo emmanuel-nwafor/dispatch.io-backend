@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { User } from '../models/Users.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { AuthRequest } from '../middleware/auth.middleware.js';
 import { AuthService } from '../services/auth.service.js';
 import { sendWelcomeEmail } from '../services/email.service.js';
@@ -530,6 +531,83 @@ export const getSavedJobs = async (req: Request, res: Response, next: NextFuncti
         }
 
         res.status(200).json({ success: true, count: user.savedJobs?.length || 0, jobs: user.savedJobs || [] });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getAiChatResponse = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const { message, history } = req.body;
+        const authReq = req as AuthRequest;
+        const userId = authReq.user?.id;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        const apiKey = process.env.AI_API_KEY;
+        if (!apiKey) {
+            res.status(200).json({
+                success: true,
+                response: "Hi! I'm your offline neural co-pilot. To enable real-time smart suggestions, please add your AI_API_KEY to the server."
+            });
+            return;
+        }
+
+        // Build simple conversational prompt with history
+        let conversationContext = "You are Dispatch Brain, a premium, hyper-intelligent career co-pilot and AI assistant for the dispatch.io platform. You help job seekers optimize their profile, review skills, and align themselves with top companies. Be professional, direct, encouraging, and highly analytical. Keep responses relatively concise (1-2 paragraphs maximum).\n\n";
+        
+        if (history && Array.isArray(history)) {
+            history.forEach((msg: any) => {
+                const role = msg.sender === 'user' ? 'User' : 'Assistant';
+                conversationContext += `${role}: ${msg.text}\n`;
+            });
+        }
+        conversationContext += `User: ${message}\nAssistant:`;
+
+        let reply = "I'm ready to assist with your next career dispatch.";
+
+        if (apiKey.startsWith('gsk_') || apiKey.toLowerCase().includes('groq')) {
+            const apiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "llama-3.3-70b-versatile",
+                    messages: [
+                        { role: "system", content: "You are Dispatch Brain, a career co-pilot. Keep replies concise and professional." },
+                        { role: "user", content: conversationContext }
+                    ]
+                })
+            });
+
+            if (apiRes.ok) {
+                const data = await apiRes.json() as any;
+                reply = data.choices?.[0]?.message?.content || reply;
+            }
+        } else {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            let result;
+            try {
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                result = await model.generateContent(conversationContext);
+            } catch (e) {
+                const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+                result = await model.generateContent(conversationContext);
+            }
+            const response = await result.response;
+            reply = response.text();
+        }
+
+        res.status(200).json({
+            success: true,
+            response: reply.trim()
+        });
     } catch (error) {
         next(error);
     }

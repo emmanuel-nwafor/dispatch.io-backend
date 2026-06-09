@@ -9,6 +9,10 @@ export interface IApplication extends Document {
     aiAnalysis: string;
     applicationMethod: 'manual' | 'auto';
     feedbackGiven: boolean;
+    fullName?: string;
+    phone?: string;
+    resumeUrl?: string;
+    coverLetter?: string;
 }
 
 const applicationSchema = new Schema<IApplication>({
@@ -18,7 +22,11 @@ const applicationSchema = new Schema<IApplication>({
     aiMatchScore: { type: Number, default: 0 },
     aiAnalysis: { type: String, default: '' },
     applicationMethod: { type: String, enum: ['manual', 'auto'], default: 'manual' },
-    feedbackGiven: { type: Boolean, default: false }
+    feedbackGiven: { type: Boolean, default: false },
+    fullName: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    resumeUrl: { type: String, default: '' },
+    coverLetter: { type: String, default: '' }
 }, { timestamps: true });
 
 export const Application = model<IApplication>('Application', applicationSchema);

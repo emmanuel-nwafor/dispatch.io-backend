@@ -14,7 +14,7 @@ import { AiService } from '../services/ai.service.js';
 export const applyToJob = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const authReq = req as AuthRequest;
-        const { jobId } = req.body;
+        const { jobId, fullName, phone, resumeUrl, coverLetter } = req.body;
         const user = authReq.user;
 
         if (!user || user.role !== 'seeker') {
@@ -42,6 +42,15 @@ export const applyToJob = async (req: Request, res: Response, next: NextFunction
             return;
         }
 
+        // Sync/Update profile with the latest form values for future applications
+        if (fullName || phone || resumeUrl) {
+            seeker.profile.fullName = fullName || seeker.profile.fullName || '';
+            seeker.profile.phone = phone || seeker.profile.phone || '';
+            seeker.profile.resumeUrl = resumeUrl || seeker.profile.resumeUrl || '';
+            seeker.markModified('profile');
+            await seeker.save();
+        }
+
         // Perform AI Match Analysis
         const { score, analysis } = await AiService.analyzeMatch(seeker.profile, job);
 
@@ -51,7 +60,11 @@ export const applyToJob = async (req: Request, res: Response, next: NextFunction
             status: 'pending',
             aiMatchScore: score,
             aiAnalysis: analysis,
-            applicationMethod: req.body.applicationMethod || 'manual'
+            applicationMethod: req.body.applicationMethod || 'manual',
+            fullName: fullName || seeker.profile.fullName || '',
+            phone: phone || seeker.profile.phone || '',
+            resumeUrl: resumeUrl || seeker.profile.resumeUrl || '',
+            coverLetter: coverLetter || ''
         });
 
         res.status(201).json({
